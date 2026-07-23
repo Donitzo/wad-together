@@ -2101,6 +2101,8 @@ export default class VectorEditor {
 
             const frontSector = line.frontSector;
             const backSector = line.backSector;
+            const frontIsVoid = frontSector === null || frontSector.properties.getValue('is_void');
+            const backIsVoid = backSector === null || backSector.properties.getValue('is_void');
 
             let baseColor;
             let fadeSign = 0;
@@ -2111,9 +2113,9 @@ export default class VectorEditor {
                 baseColor = theme.line.hover;
             } else if (selected) {
                 baseColor = theme.line.selected;
-            } else if (frontSector === null && backSector === null) {
+            } else if (frontIsVoid && backIsVoid) {
                 baseColor = theme.line.floating;
-            } else if (frontSector !== null && backSector !== null) {
+            } else if (!frontIsVoid && !backIsVoid) {
                 baseColor = line.properties.getValue('impassable')
                     ? theme.line.impassable
                     : line.properties.getValue('special') > 0
@@ -2123,7 +2125,7 @@ export default class VectorEditor {
                     backSector.properties.getValue('floor_height'));
             } else {
                 baseColor = theme.line.outer;
-                fadeSign = frontSector === null ? 1 : (backSector === null ? -1 : 0);
+                fadeSign = frontIsVoid ? 1 : (backIsVoid ? -1 : 0);
             }
 
             linesToDraw.push(v0.x, v0.y, v1.x, v1.y, baseColor, selected || hovered);
