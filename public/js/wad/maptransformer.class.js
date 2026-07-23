@@ -289,10 +289,10 @@ export default class MapTransformer {
      * plus BEHAVIOR for Hexen-format maps.
      *
      * @param {Object} doc - Document data.
-     * @param {string} [mapName='MAP01'] - Map header lump name.
+     * @param {string} mapName - Map header lump name.
      * @returns {Uint8Array} PWAD file data.
      */
-    static documentToWadBytes(doc, mapName = 'MAP01') {
+    static documentToWadBytes(doc, mapName) {
         let lumps = [];
 
         const format = MapTransformer.PORT_EXPORT_FORMAT.get(doc.port);

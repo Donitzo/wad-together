@@ -214,7 +214,8 @@ export default class Interface {
         const run = async () => {
             const doc = this.#doomMap.export(this.#resourceManager);
 
-            const bytes = MapTransformer.documentToWadBytes(doc, 'MAP01');
+            const mapName = this.#doomMap.metadata.getValue('mapname');
+            const bytes = MapTransformer.documentToWadBytes(doc, mapName);
 
             let binary = '';
 
@@ -234,7 +235,7 @@ export default class Interface {
 
             socket.emit('launch', {
                 resourceNames,
-                mapName: 'MAP01',
+                mapName,
                 base64,
             });
 
@@ -1292,7 +1293,7 @@ export default class Interface {
             }
 
             const doc = this.#resourceManager.loadMapAsDocument(selectedMapName);
-            this.#doomMap.import(doc);
+            this.#doomMap.import(doc, selectedMapName);
             updatePlayerStartPosition();
 
             this.#client.sendMap();
@@ -1329,7 +1330,7 @@ export default class Interface {
                 const ast = UdmfParser.parse(text);
                 const doc = MapTransformer.udmfAstToDocument(ast);
 
-                this.#doomMap.import(doc);
+                this.#doomMap.import(doc, 'MAP01');
                 updatePlayerStartPosition();
 
                 this.#client.sendMap();
@@ -1360,7 +1361,8 @@ export default class Interface {
         // Save map file
         this.#elements.buttonSaveMap.addEventListener('click', () => {
             const doc = this.#doomMap.export(this.#resourceManager);
-            downloadFile(MapTransformer.documentToWadBytes(doc), `${doc.port}.wad`);
+            const mapName = this.#doomMap.metadata.getValue('mapname');
+            downloadFile(MapTransformer.documentToWadBytes(doc, mapName), `${doc.port}.wad`);
         });
 
         // User panel population

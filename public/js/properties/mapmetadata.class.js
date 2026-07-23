@@ -44,6 +44,13 @@ export default class MapMetadata extends BaseProperties {
             }],
             default: 'doom_wad',
         }, {
+            key: 'mapname',
+            label: 'Map name',
+            tooltip: 'Map name, such as MAP01 or E1M1',
+            type: 'string',
+            maxLength: 8,
+            default: 'MAP01',
+        }, {
             key: 'title',
             udmfKey: 'levelname',
             label: 'Title',

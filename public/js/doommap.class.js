@@ -4024,9 +4024,10 @@ export default class DoomMap extends EventTarget {
      * Replaces the map with data from the internal MapTransformer document format.
      *
      * @param {Object} document - Document data.
+     * @param {string} [mapName='MAP01'] - Map name.
      * @param {boolean} [importLooseVertices=false] - Whether to import vertices not referenced by lines.
      */
-    import(document, importLooseVertices = false) {
+    import(document, mapName = 'MAP01', importLooseVertices = false) {
         const port = document.port;
         const format = MapTransformer.PORT_EXPORT_FORMAT.get(port);
 
@@ -4038,6 +4039,7 @@ export default class DoomMap extends EventTarget {
 
         this.#metadata.import(port, document.metadata ?? {});
         this.#metadata.setValue('port', port);
+        this.#metadata.setValue('mapname', mapName);
 
         const sectors = document.sectors ?? [];
         const sidedefs = document.sidedefs ?? [];
