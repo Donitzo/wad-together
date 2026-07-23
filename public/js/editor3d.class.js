@@ -27,7 +27,7 @@ export default class Editor3D {
     /** @type {number} Level turn speed in radians per second. */
     static #VR_OVERHEAD_TURN_SPEED = 0.5;
     /** @type {number} Level scale speed. */
-    static #VR_OVERHEAD_SCALE_SPEED = 0.05;
+    static #VR_OVERHEAD_SCALE_SPEED = 0.03;
     /** @type {number} Stick deadzone in VR. */
     static #VR_STICK_DEAD_ZONE = 0.2;
     /** @type {number} Texture-scrolling distance applied per cursor pixel during drag. */
@@ -617,7 +617,7 @@ export default class Editor3D {
             if (leftController.userData.gripHeld || rightController.userData.gripHeld) {
                 const scale = THREE.MathUtils.clamp(
                     this.#mapContainer.scale.x + scaleSpeed * metersPerUnit * elapsedSeconds * rightStickY,
-                    metersPerUnit * 0.025,
+                    metersPerUnit * 0.005,
                     metersPerUnit * 0.5
                 );
                 this.#mapContainer.scale.set(scale, scale, scale);
