@@ -374,6 +374,15 @@ export default class Interface {
                     }
                     break;
 
+                case 'b':
+                    if (!e.ctrlKey && !e.shiftKey) {
+                        // Rectangle mode
+                        vectorEditor.setMode(vectorEditor.mode === 'rectangle' ? null : 'rectangle');
+
+                        e.preventDefault();
+                    }
+                    break;
+
                 case 'c':
                 case 'C':
                     if (e.ctrlKey) {
@@ -527,15 +536,6 @@ export default class Interface {
                     if (!e.ctrlKey && !e.shiftKey) {
                         // Scale mode
                         vectorEditor.setMode('scale');
-
-                        e.preventDefault();
-                    }
-                    break;
-
-                case 'b':
-                    if (!e.ctrlKey && !e.shiftKey) {
-                        // Rectangle mode
-                        vectorEditor.setMode(vectorEditor.mode === 'rectangle' ? null : 'rectangle');
 
                         e.preventDefault();
                     }
@@ -807,6 +807,50 @@ export default class Interface {
                         if (operations.length > 0) {
                             this.#client.sendTransaction(operations);
                         }
+                    }
+                    break;
+
+                case 'n':
+                case 'N':
+                    if (!e.ctrlKey && !e.shiftKey) {
+                        // Flip selection void
+                        const geometries = this.#doomMap.getSelection();
+
+                        let setVoid = null;
+
+                        geometries.forEach(geometry => {
+                            if (geometry instanceof Sector) {
+                                if (setVoid === null) {
+                                    setVoid = !geometry.properties.getValue('is_void');
+                                }
+                            }
+                        });
+
+                        const operations = [];
+
+                        geometries.forEach(geometry => {
+                            if (geometry instanceof Sector) {
+                                if (geometry.properties.getValue('is_void') !== setVoid) {
+                                    const line = geometry.lines[0];
+                                    operations.push({
+                                        op: 'setSectorPropertyBySide',
+                                        args: [
+                                            line.v0.x, line.v0.y,
+                                            line.v1.x, line.v1.y,
+                                            line.frontSector === geometry,
+                                            'is_void',
+                                            setVoid,
+                                        ],
+                                    });
+                                }
+                            }
+                        });
+
+                        if (operations.length > 0) {
+                            this.#client.sendTransaction(operations);
+                        }
+
+                        e.preventDefault();
                     }
                     break;
 

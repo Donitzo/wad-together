@@ -77,8 +77,10 @@ export default class VectorEditor {
             hoverFill: '#a24e1c80',
             selectedFill: '#00f4ff40',
             selectedHoverFill: '#31f5ff60',
+            selectedHoverVoidFill: '#e94c5960',
+            selectedVoidFill: '#e94c5940',
             specialFill: '#93289a60',
-            voidFill: '#bd111160',
+            voidFill: '#c0000080',
         },
 
         thing: {
@@ -2050,9 +2052,13 @@ export default class VectorEditor {
             let fillColor;
 
             if (hovered && selected) {
-                fillColor = theme.sector.selectedHoverFill;
+                fillColor = sector.properties.getValue('is_void')
+                    ? theme.sector.selectedHoverVoidFill
+                    : theme.sector.selectedHoverFill;
             } else if (selected) {
-                fillColor = theme.sector.selectedFill;
+                fillColor = sector.properties.getValue('is_void')
+                    ? theme.sector.selectedVoidFill
+                    : theme.sector.selectedFill;
             } else if (hovered) {
                 fillColor = sector.properties.getValue('is_void')
                     ? theme.sector.hoverVoidFill
