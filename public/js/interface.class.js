@@ -1160,7 +1160,7 @@ export default class Interface {
         this.#elements.buttonLoadMiniwad.addEventListener('click', async () => {
             setBusy(true);
 
-            const response = await fetch('/wad/miniwad.wad');
+            const response = await fetch('./wad/miniwad.wad');
             const buffer = await response.arrayBuffer();
 
             this.#resourceManager.lumpManager.addSourceWad(buffer, 'miniwad.wad');
