@@ -373,24 +373,49 @@ export default class ResourceManager {
             });
         };
 
-        const texture1 = this.#lumpManager.getLump('TEXTURE1');
-        const texture2 = this.#lumpManager.getLump('TEXTURE2');
-        const pnames = this.#lumpManager.getLump('PNAMES');
+        const binaryLumpsBySource = new Map();
+        const binarySourceOrder = [];
 
-        if (texture1 !== null) {
-            loadDefinitions(ResourceUtility.parseTextureDefinitions(texture1.data, pnames?.data ?? null));
-        }
+        this.#lumpManager.lumps.forEach(lump => {
+            if (lump.name !== 'PNAMES' &&
+                lump.name !== 'TEXTURE1' &&
+                lump.name !== 'TEXTURE2') {
+                return;
+            }
 
-        if (texture2 !== null) {
-            loadDefinitions(ResourceUtility.parseTextureDefinitions(texture2.data, pnames?.data ?? null));
-        }
+            let sourceLumps = binaryLumpsBySource.get(lump.sourceIndex);
 
-        const texturesLumps = this.#lumpManager.lumps.filter(lump =>
-            !lump.name.includes('/') && lump.resourceName === 'TEXTURES'
-        );
+            if (sourceLumps === undefined) {
+                sourceLumps = new Map();
+                binaryLumpsBySource.set(lump.sourceIndex, sourceLumps);
+                binarySourceOrder.push(lump.sourceIndex);
+            }
 
-        texturesLumps.forEach(lump => {
-            loadDefinitions(ResourceUtility.parseTexturesTextLump(lump));
+            sourceLumps.set(lump.name, lump);
+        });
+
+
+        let inheritedPnamesData = null;
+
+        binarySourceOrder.forEach(sourceIndex => {
+            const sourceLumps = binaryLumpsBySource.get(sourceIndex);
+            const sourcePnames = sourceLumps.get('PNAMES');
+            const texture1 = sourceLumps.get('TEXTURE1');
+            const texture2 = sourceLumps.get('TEXTURE2');
+
+            if (sourcePnames !== undefined) {
+                inheritedPnamesData = sourcePnames.data;
+            }
+            if (texture1 !== undefined) {
+                loadDefinitions(
+                    ResourceUtility.parseTextureDefinitions(texture1.data, inheritedPnamesData)
+                );
+            }
+            if (texture2 !== undefined) {
+                loadDefinitions(
+                    ResourceUtility.parseTextureDefinitions(texture2.data, inheritedPnamesData)
+                );
+            }
         });
 
         if (!foundAnyTextures) {
