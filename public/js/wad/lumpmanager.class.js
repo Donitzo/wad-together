@@ -242,6 +242,7 @@ export default class LumpManager {
         const id = decoder.decode(buffer.slice(0, 4));
         if (id !== 'IWAD' && id !== 'PWAD') {
             console.warn(`Unknown WAD type "${id}"`);
+            return;
         }
 
         // Keep track of sources
