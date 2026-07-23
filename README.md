@@ -1,4 +1,4 @@
-# Doom Builder JS
+# WAD Together
 
 ## Project Overview
 ### Features

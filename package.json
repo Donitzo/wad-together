@@ -1,5 +1,5 @@
 {
-    "name": "doom-builder-js",
+    "name": "wad-together",
     "version": "0.9.0",
     "type": "module",
     "main": "server.js",
