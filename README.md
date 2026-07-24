@@ -14,7 +14,7 @@ It also introduces several new ideas, such as real-time multiplayer editing, sma
 
 The editor was designed with collaborative editing in mind, using a GUID-less networking layer to synchronize maps between any number of clients.
 
-The networking model is authoritative and room-based. A single server can host any number of rooms. Each room has one administrator and any number of regular users. ny changes a user makes to the map are validated by the administrator and mirrored to all other clients.
+The networking model is authoritative and room-based. A single server can host any number of rooms. Each room has one administrator and any number of regular users. Any changes a user makes to the map are validated by the administrator and mirrored to all other clients.
 
 A feature we worked hard on was personalized undo histories. Each user in a room can undo or redo their own actions without interfering with those of other users. While this may seem like overkill, undo is an important feature in any decent workflow. This was made possible by the GUID-less design, which allows actions to be stored in a primitive form (for example, create a line from P1 to P2 or assign texture T to the line P1:P2). Additionally, sectors are derived entirely from line data and computed locally rather than synchronized over the network.
 
