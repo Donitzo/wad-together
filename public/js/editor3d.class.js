@@ -533,12 +533,18 @@ export default class Editor3D {
         if (inVr) {
             const vrDeadzone = Editor3D.#VR_STICK_DEAD_ZONE;
 
-            leftController = this.#vrControllers.find(controller =>
-                controller.userData.inputSource?.handedness === 'left'
-            ) ?? this.#vrControllers[0];
-            rightController = leftController === this.#vrControllers[0]
-                ? this.#vrControllers[1]
-                : this.#vrControllers[0];
+            leftController = this.#vrControllers.find(
+                controller => controller.userData.inputSource?.handedness === 'left'
+            );
+            rightController = this.#vrControllers.find(
+                controller => controller.userData.inputSource?.handedness === 'right'
+            );
+            if (leftController === undefined && rightController !== undefined) {
+                leftController = this.#vrControllers.find(controller => controller !== rightController);
+            }
+            if (leftController !== undefined && rightController === undefined) {
+                rightController = this.#vrControllers.find(controller => controller !== leftController);
+            }
 
             leftController.userData.grip.children[0].scale.x = -1;
             rightController.userData.grip.children[0].scale.x = 1;
