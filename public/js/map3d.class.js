@@ -367,11 +367,12 @@ export default class Map3D {
         const metersPerUnit = Map3D.METERS_PER_UNIT;
 
         const cameraPosition = camera.getWorldPosition(Map3D.#tmpV30);
+        this.#container.worldToLocal(cameraPosition);
 
-        const cameraMinX = (cameraPosition.x - cullingDistance) / metersPerUnit;
-        const cameraMaxX = (cameraPosition.x + cullingDistance) / metersPerUnit;
-        const cameraMinY = (cameraPosition.z - cullingDistance) / metersPerUnit;
-        const cameraMaxY = (cameraPosition.z + cullingDistance) / metersPerUnit;
+        const cameraMinX = cameraPosition.x - cullingDistance / metersPerUnit;
+        const cameraMaxX = cameraPosition.x + cullingDistance / metersPerUnit;
+        const cameraMinY = cameraPosition.z - cullingDistance / metersPerUnit;
+        const cameraMaxY = cameraPosition.z + cullingDistance / metersPerUnit;
 
         const cameraCellMinX = Math.max(0, Math.floor(cameraMinX / cellSize) + gridOffset);
         const cameraCellMaxX = Math.min(gridSize - 1, Math.floor(cameraMaxX / cellSize) + gridOffset);
@@ -518,8 +519,8 @@ export default class Map3D {
     #rotateSpriteMesh(cameraPosition, mesh, angle) {
         const metersPerUnit = Map3D.METERS_PER_UNIT;
 
-        const dx = cameraPosition.x / metersPerUnit - mesh.position.x;
-        const dz = cameraPosition.z / metersPerUnit - mesh.position.z;
+        const dx = cameraPosition.x - mesh.position.x;
+        const dz = cameraPosition.z - mesh.position.z;
 
         const angleToCamera = (Math.atan2(dx, dz) * 180 / Math.PI + 360 - 90) % 360;
         const relativeAngle = ((angleToCamera - angle + 180) % 360) - 180;
