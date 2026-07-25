@@ -777,8 +777,8 @@ export default class DoomMap extends EventTarget {
         });
 
         this.#modifiedLines.forEach(l => {
-            const hasFront = l.frontSector !== null && !l.frontSector.properties.getValue('is_void');
-            const hasBack = l.backSector !== null && !l.backSector.properties.getValue('is_void');
+            const hasFront = l.frontSector !== null && !l.frontSector.isVoid;
+            const hasBack = l.backSector !== null && !l.backSector.isVoid;
             const isDoubleSided = hasFront && hasBack;
             if (isDoubleSided && l.properties.getValue('clear_double_sided')) {
                 this.setLineProperty(l.v0.x, l.v0.y, l.v1.x, l.v1.y, 'clear_double_sided', false);
@@ -1625,11 +1625,11 @@ export default class DoomMap extends EventTarget {
 
                         const templateHasFront = templateUnresolved ||
                             templateLine.frontSector !== null &&
-                            !templateLine.frontSector.properties.getValue('is_void');
+                            !templateLine.frontSector.isVoid;
 
                         const templateHasBack = templateUnresolved ||
                             templateLine.backSector !== null &&
-                            !templateLine.backSector.properties.getValue('is_void');
+                            !templateLine.backSector.isVoid;
 
                         if (templateHasFront !== templateHasBack) {
                             const sourceProperties = templateHasFront
@@ -1678,7 +1678,7 @@ export default class DoomMap extends EventTarget {
                             (current.y + next.y) * 0.5
                         );
 
-                        if (parentSector !== null && !parentSector.properties.getValue('is_void')) {
+                        if (parentSector !== null && !parentSector.isVoid) {
                             line.frontSectorProperties.copy(parentSector.properties);
                             line.backSectorProperties.copy(parentSector.properties);
                         }
@@ -2731,11 +2731,11 @@ export default class DoomMap extends EventTarget {
             const sector = isFront ? l.frontSector : l.backSector;
             const otherSector = isFront ? l.backSector : l.frontSector;
 
-            if (sector === null || sector.properties.getValue('is_void')) {
+            if (sector === null || sector.isVoid) {
                 continue;
             }
 
-            const twoSided = otherSector !== null && !otherSector.properties.getValue('is_void');
+            const twoSided = otherSector !== null && !otherSector.isVoid;
 
             const floorHeight = sector.properties.getValue('floor_height');
             const ceilingHeight = sector.properties.getValue('ceiling_height');
@@ -3920,7 +3920,7 @@ export default class DoomMap extends EventTarget {
         const sectorIndex = new Map();
 
         this.iterateSectors(sector => {
-            if (sector.properties.getValue('is_void')) {
+            if (sector.isVoid) {
                 return;
             }
 
@@ -3943,14 +3943,14 @@ export default class DoomMap extends EventTarget {
         ].find(name => resourceManager.textures.has(name));
 
         const addSide = (sideProperties, sector, otherSector) => {
-            if (sector === null || sector.properties.getValue('is_void')) {
+            if (sector === null || sector.isVoid) {
                 return -1;
             }
 
             const properties = sideProperties.export(port);
             properties.sector = sectorIndex.get(sector);
 
-            const isOuterFacing = otherSector === null || otherSector.properties.getValue('is_void');
+            const isOuterFacing = otherSector === null || otherSector.isVoid;
             const missingMiddle =
                 properties.texturemiddle === '' ||
                 properties.texturemiddle === '-' ||

@@ -2034,7 +2034,7 @@ export default class VectorEditor {
             ctx.closePath();
 
             if (this.#showTextures) {
-                if (sector.properties.getValue('is_void')) {
+                if (sector.isVoid) {
                     return;
                 }
 
@@ -2060,21 +2060,21 @@ export default class VectorEditor {
             let fillColor;
 
             if (hovered && selected) {
-                fillColor = sector.properties.getValue('is_void')
+                fillColor = sector.isVoid
                     ? theme.sector.selectedHoverVoidFill
                     : theme.sector.selectedHoverFill;
             } else if (selected) {
-                fillColor = sector.properties.getValue('is_void')
+                fillColor = sector.isVoid
                     ? theme.sector.selectedVoidFill
                     : theme.sector.selectedFill;
             } else if (hovered) {
-                fillColor = sector.properties.getValue('is_void')
+                fillColor = sector.isVoid
                     ? theme.sector.hoverVoidFill
                     : sector.properties.getValue('special') > 0
                     ? theme.sector.hoverSpecialFill
                     : theme.sector.hoverFill;
             } else {
-                fillColor = sector.properties.getValue('is_void')
+                fillColor = sector.isVoid
                     ? theme.sector.voidFill
                     : sector.properties.getValue('special') > 0
                     ? theme.sector.specialFill
@@ -2109,8 +2109,8 @@ export default class VectorEditor {
 
             const frontSector = line.frontSector;
             const backSector = line.backSector;
-            const frontIsVoid = frontSector === null || frontSector.properties.getValue('is_void');
-            const backIsVoid = backSector === null || backSector.properties.getValue('is_void');
+            const frontIsVoid = frontSector === null || frontSector.isVoid;
+            const backIsVoid = backSector === null || backSector.isVoid;
 
             let baseColor;
             let fadeSign = 0;
@@ -3725,7 +3725,7 @@ export default class VectorEditor {
 
                 const middleTexture = side.properties.getValue('texture_middle');
 
-                if (side.otherSector === null || side.otherSector.properties.getValue('is_void')) {
+                if (side.otherSector === null || side.otherSector.isVoid) {
                     if (isMiddle) {
                         operations.push({
                             op: 'setSideProperty',

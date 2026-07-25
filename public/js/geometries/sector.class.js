@@ -66,6 +66,11 @@ export default class Sector extends Geometry {
     /** @type {boolean} Whether the sector has been permanently removed from the map. */
     #removedFromMap = false;
 
+    /** @type {boolean} Whether this is a void sector. */
+    get isVoid() {
+        return this.#properties.getValue('is_void');
+    }
+
     /**
      * Constructs a sector from connected line-side descriptors.
      *

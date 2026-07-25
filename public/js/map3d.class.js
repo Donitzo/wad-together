@@ -751,7 +751,7 @@ export default class Map3D {
     #buildSector(sector) {
         const meshes = [];
 
-        if (!sector.properties.getValue('is_void') &&
+        if (!sector.isVoid &&
             sector.properties.getValue('floor_height') < sector.properties.getValue('ceiling_height')) {
             const floorMesh = this.#createFlatMesh(sector, true);
             if (floorMesh !== null) {
@@ -987,8 +987,8 @@ export default class Map3D {
         const frontSector = line.frontSector;
         const backSector = line.backSector;
 
-        if ((frontSector === null || frontSector.properties.getValue('is_void')) &&
-            (backSector === null || backSector.properties.getValue('is_void'))) {
+        if ((frontSector === null || frontSector.isVoid) &&
+            (backSector === null || backSector.isVoid)) {
             return result;
         }
 
@@ -996,9 +996,9 @@ export default class Map3D {
             const sideProperties = isFront ? frontProperties : backProperties;
             const sector = isFront ? frontSector : backSector;
             const otherSector = !isFront ? frontSector : backSector;
-            const isOuterFacing = otherSector === null || otherSector.properties.getValue('is_void');
+            const isOuterFacing = otherSector === null || otherSector.isVoid;
 
-            if (sector === null || sector.properties.getValue('is_void') || !isOuterFacing) {
+            if (sector === null || sector.isVoid || !isOuterFacing) {
                 continue;
             }
 
@@ -1027,8 +1027,8 @@ export default class Map3D {
             }
         }
 
-        if (frontSector === null || frontSector.properties.getValue('is_void') ||
-            backSector === null || backSector.properties.getValue('is_void') ||
+        if (frontSector === null || frontSector.isVoid ||
+            backSector === null || backSector.isVoid ||
             result.length > 0) {
             return result;
         }

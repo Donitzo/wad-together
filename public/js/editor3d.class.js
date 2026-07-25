@@ -884,8 +884,10 @@ export default class Editor3D {
 
             const sector = hovered.type === 'sector' ? hovered.sector :
                 hovered.isFront
-                    ? hovered.line.backSector ?? hovered.line.frontSector
-                    : hovered.line.frontSector ?? hovered.line.backSector;
+                    ? hovered.line.backSector !== null && !hovered.line.backSector.isVoid
+                        ? hovered.line.backSector : hovered.line.frontSector
+                    : hovered.line.frontSector !== null && !hovered.line.frontSector.isVoid
+                        ? hovered.line.frontSector : hovered.line.backSector;
 
             if (sector === null) {
                 return;

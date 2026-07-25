@@ -414,9 +414,9 @@ export default class Interface {
 
                                     const doubleSided =
                                         geometry.frontSector !== null &&
-                                        !geometry.frontSector.properties.getValue('is_void') &&
+                                        !geometry.frontSector.isVoid &&
                                         geometry.backSector !== null &&
-                                        !geometry.backSector.properties.getValue('is_void');
+                                        !geometry.backSector.isVoid;
 
                                     const property = !doubleSided
                                         ? 'texture_middle'
@@ -624,9 +624,9 @@ export default class Interface {
 
                                 const doubleSided =
                                     geometry.frontSector !== null &&
-                                    !geometry.frontSector.properties.getValue('is_void') &&
+                                    !geometry.frontSector.isVoid &&
                                     geometry.backSector !== null &&
-                                    !geometry.backSector.properties.getValue('is_void');
+                                    !geometry.backSector.isVoid;
 
                                 for (const isFront of [true, false]) {
                                     if (!this.#doomMap.isSelected(
@@ -822,7 +822,7 @@ export default class Interface {
                         geometries.forEach(geometry => {
                             if (geometry instanceof Sector) {
                                 if (setVoid === null) {
-                                    setVoid = !geometry.properties.getValue('is_void');
+                                    setVoid = !geometry.isVoid;
                                 }
                             }
                         });
@@ -831,7 +831,7 @@ export default class Interface {
 
                         geometries.forEach(geometry => {
                             if (geometry instanceof Sector) {
-                                if (geometry.properties.getValue('is_void') !== setVoid) {
+                                if (geometry.isVoid !== setVoid) {
                                     const line = geometry.lines[0];
                                     operations.push({
                                         op: 'setSectorPropertyBySide',
@@ -1575,11 +1575,11 @@ export default class Interface {
             } else if (g instanceof Line) {
                 lineProperties.push(g.properties);
                 if (this.#selectedFront.has(g) && g.frontSector !== null &&
-                    !g.frontSector.properties.getValue('is_void')) {
+                    !g.frontSector.isVoid) {
                     sidePropertiesFront.push(g.frontProperties);
                 }
                 if (this.#selectedBack.has(g) && g.backSector !== null &&
-                    !g.backSector.properties.getValue('is_void')) {
+                    !g.backSector.isVoid) {
                     sidePropertiesBack.push(g.backProperties);
                 }
             }
@@ -1632,7 +1632,7 @@ export default class Interface {
 
                 this.#selection.forEach(g => {
                     if (g instanceof Line && this.#selectedFront.has(g) && g.frontSector !== null &&
-                    !g.frontSector.properties.getValue('is_void')) {
+                    !g.frontSector.isVoid) {
                         operations.push({
                             op: 'setSideProperty',
                             args: [g.v0.x, g.v0.y, g.v1.x, g.v1.y, true, key, value, false],
@@ -1651,7 +1651,7 @@ export default class Interface {
 
                 this.#selection.forEach(g => {
                     if (g instanceof Line && this.#selectedBack.has(g) && g.backSector !== null &&
-                    !g.backSector.properties.getValue('is_void')) {
+                    !g.backSector.isVoid) {
                         operations.push({
                             op: 'setSideProperty',
                             args: [g.v0.x, g.v0.y, g.v1.x, g.v1.y, false, key, value, false],
