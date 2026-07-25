@@ -1633,6 +1633,12 @@ export default class VectorEditor {
 
                 this.#applyTemporaryTransform(true);
 
+                if (this.#mode === 'scale' &&
+                    transform.start.x === transform.pivot.x && transform.start.y === transform.pivot.y) {
+                    transform.start.x += 50;
+                    transform.start.y += 50;
+                }
+
                 break;
             case 'line':
                 break;
