@@ -357,10 +357,11 @@ export default class Map3D {
      * culls distant sectors and things, creates multiplayer sprites, and rotates billboard sprites.
      *
      * @param {THREE.Object3D} camera - Camera or camera rig used for culling and billboarding.
+     * @param {boolean} [renderEverything=false] - Whether to ignore distance culling.
      * @param {number} [cullingDistance=200] - Visibility radius in world-space units.
      * @param {number} [maxSectorBuilds=8] - Maximum dirty sectors rebuilt this frame.
      */
-    update(camera, cullingDistance = 200, maxSectorBuilds = 8) {
+    update(camera, renderEverything = false, cullingDistance = 200, maxSectorBuilds = 8) {
         const cellSize = Map3D.#SPATIAL_INDEX_CELL_SIZE;
         const gridSize = Map3D.#SPATIAL_INDEX_SIZE;
         const gridOffset = Math.floor(gridSize / 2);
@@ -382,23 +383,44 @@ export default class Map3D {
         const sectorsToBuild = Map3D.#tmpSet0;
         sectorsToBuild.clear();
 
-        for (let x = cameraCellMinX; x <= cameraCellMaxX; x++) {
-            for (let y = cameraCellMinY; y <= cameraCellMaxY; y++) {
-                const sectors = this.#spatialIndexSector.get(x + y * gridSize);
-                if (sectors !== undefined) {
-                    sectors.forEach(sector => {
-                        if (this.#dirtySectors.has(sector)) {
-                            // Rebuild dirty sector (remove or rebuild)
-                            if (sectorsToBuild.size < maxSectorBuilds) {
-                                sectorsToBuild.add(sector);
+
+        if (renderEverything) {
+            this.#dirtySectors.forEach(sector => {
+                if (sectorsToBuild.size < maxSectorBuilds) {
+                    sectorsToBuild.add(sector);
+                }
+            });
+
+            this.#sectors.forEach(sector => {
+                if (this.#dirtySectors.has(sector)) {
+                    return;
+                }
+
+                if (!this.#visibleSectors.has(sector)) {
+                    this.#attachSectorMeshes(sector);
+                    this.#visibleSectors.add(sector);
+                    this.#attachVisibleSectorWallMeshes(sector);
+                }
+            });
+        } else {
+            for (let x = cameraCellMinX; x <= cameraCellMaxX; x++) {
+                for (let y = cameraCellMinY; y <= cameraCellMaxY; y++) {
+                    const sectors = this.#spatialIndexSector.get(x + y * gridSize);
+                    if (sectors !== undefined) {
+                        sectors.forEach(sector => {
+                            if (this.#dirtySectors.has(sector)) {
+                                // Rebuild dirty sector (remove or rebuild)
+                                if (sectorsToBuild.size < maxSectorBuilds) {
+                                    sectorsToBuild.add(sector);
+                                }
+                            } else if (!this.#visibleSectors.has(sector)) {
+                                // Make a hidden sector visible
+                                this.#attachSectorMeshes(sector);
+                                this.#visibleSectors.add(sector);
+                                this.#attachVisibleSectorWallMeshes(sector);
                             }
-                        } else if (!this.#visibleSectors.has(sector)) {
-                            // Make a hidden sector visible
-                            this.#attachSectorMeshes(sector);
-                            this.#visibleSectors.add(sector);
-                            this.#attachVisibleSectorWallMeshes(sector);
-                        }
-                    });
+                        });
+                    }
                 }
             }
         }

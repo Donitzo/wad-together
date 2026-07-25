@@ -953,8 +953,7 @@ export default class Editor3D {
 
         this.#updateFirstPersonControls(elapsedSeconds);
 
-        const cullingDistance = this.#renderer.xr.isPresenting && this.#vrOverheadMode ? 1000 : 200;
-        this.#map3d.update(this.#camera, cullingDistance);
+        this.#map3d.update(this.#camera, this.#renderer.xr.isPresenting && this.#vrOverheadMode);
 
         this.#renderer.render(this.#scene, this.#camera);
     }
