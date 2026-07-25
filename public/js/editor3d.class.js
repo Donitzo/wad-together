@@ -616,11 +616,11 @@ export default class Editor3D {
             // Move level
             this.#mapContainer.position.x += (
                 Math.sin(yaw) * leftStickY +
-                Math.sin(yawSide) * leftStickX
+                Math.sin(yawSide) * -leftStickX
             ) * elapsedSeconds * moveSpeed * metersPerUnit;
             this.#mapContainer.position.z += (
                 Math.cos(yaw) * leftStickY +
-                Math.cos(yawSide) * leftStickX
+                Math.cos(yawSide) * -leftStickX
             ) * elapsedSeconds * moveSpeed * metersPerUnit;
             if (leftController.userData.gripHeld || rightController.userData.gripHeld) {
                 const scale = THREE.MathUtils.clamp(
@@ -952,8 +952,8 @@ export default class Editor3D {
 
         this.#updateFirstPersonControls(elapsedSeconds);
 
-        const cullingDistance = this.#renderer.xr.isPresenting && this.#vrOverheadMode ? 3000 : 200;
-        this.#map3d.update(this.#cameraRig, cullingDistance);
+        const cullingDistance = this.#renderer.xr.isPresenting && this.#vrOverheadMode ? 1000 : 200;
+        this.#map3d.update(this.#camera, cullingDistance);
 
         this.#renderer.render(this.#scene, this.#camera);
     }

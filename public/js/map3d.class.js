@@ -366,10 +366,12 @@ export default class Map3D {
         const gridOffset = Math.floor(gridSize / 2);
         const metersPerUnit = Map3D.METERS_PER_UNIT;
 
-        const cameraMinX = (camera.position.x - cullingDistance) / metersPerUnit;
-        const cameraMaxX = (camera.position.x + cullingDistance) / metersPerUnit;
-        const cameraMinY = (camera.position.z - cullingDistance) / metersPerUnit;
-        const cameraMaxY = (camera.position.z + cullingDistance) / metersPerUnit;
+        const cameraPosition = camera.getWorldPosition(Map3D.#tmpV30);
+
+        const cameraMinX = (cameraPosition.x - cullingDistance) / metersPerUnit;
+        const cameraMaxX = (cameraPosition.x + cullingDistance) / metersPerUnit;
+        const cameraMinY = (cameraPosition.z - cullingDistance) / metersPerUnit;
+        const cameraMaxY = (cameraPosition.z + cullingDistance) / metersPerUnit;
 
         const cameraCellMinX = Math.max(0, Math.floor(cameraMinX / cellSize) + gridOffset);
         const cameraCellMaxX = Math.min(gridSize - 1, Math.floor(cameraMaxX / cellSize) + gridOffset);
@@ -509,15 +511,15 @@ export default class Map3D {
     /**
      * Rotates a billboard sprite toward the camera and chooses its directional frame.
      *
-     * @param {THREE.Object3D} camera - Camera or camera rig viewing the sprite.
+     * @param {THREE.Vector3} cameraPosition - Camera world position.
      * @param {THREE.Mesh} mesh - Sprite mesh to rotate.
      * @param {number} angle - Sprite's map-facing angle in degrees.
      */
-    #rotateSpriteMesh(camera, mesh, angle) {
+    #rotateSpriteMesh(cameraPosition, mesh, angle) {
         const metersPerUnit = Map3D.METERS_PER_UNIT;
 
-        const dx = camera.position.x / metersPerUnit - mesh.position.x;
-        const dz = camera.position.z / metersPerUnit - mesh.position.z;
+        const dx = cameraPosition.x / metersPerUnit - mesh.position.x;
+        const dz = cameraPosition.z / metersPerUnit - mesh.position.z;
 
         const angleToCamera = (Math.atan2(dx, dz) * 180 / Math.PI + 360 - 90) % 360;
         const relativeAngle = ((angleToCamera - angle + 180) % 360) - 180;
