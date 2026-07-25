@@ -122,7 +122,7 @@ The editor was designed for a keyboard+mouse-driven workflow, with your left han
 
 In the 2D view, hold the right mouse button to pan quickly. In the 3D view, hold the right mouse button to fly around. Hold `Shift` while moving to strafe.
 
-#### Editing Modes
+### Editing Modes
 
 There are six editing modes: selection <img width="15px" src="./public/images/ui/select_mode.png">, line drawing <img width="20px" src="./public/images/ui/line_mode.png">, rectangle drawing <img width="20px" src="./public/images/ui/rectangle_mode.png">, ellipse drawing <img width="20px" src="./public/images/ui/ellipse_mode.png">, extrusion <img width="20px" src="./public/images/ui/extrude_mode.png">, and Thing placement <img width="20px" src="./public/images/ui/thing_mode.png">. You can switch between modes using the buttons in the editor or their corresponding keyboard shortcuts.
 
@@ -132,7 +132,7 @@ Press `Space` at any time to return to selection mode and click again deselect e
 
 <img src="./images/shortcuts.png">
 
-#### Multiplayer
+### Multiplayer
 
 To create a multiplayer room, connect to the server with `?online` appended to the URL. A new room will be created with you as its administrator.
 
@@ -142,7 +142,7 @@ You can chat with other users using the chat box at the bottom of the screen.
 
 **Note:** Any map you have loaded will be shared with users who join the room, but your loaded WAD files will not. Users who have not loaded their own WAD files will see only the default textures.
 
-#### Virtual Reality
+### Virtual Reality
 
 When the editor is opened on a WebXR-capable device, two additional buttons, <img width="20px" src="./public/images/ui/vr.png"> and <img width="20px" src="./public/images/ui/xr.png">, become available. These allow you to view the map in virtual or augmented reality.
 
