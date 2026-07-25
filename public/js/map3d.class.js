@@ -497,14 +497,14 @@ export default class Map3D {
             user.sprite.visible = user.connected;
             user.sprite.position.set(user.player.x, user.player.z - 41, -user.player.y);
 
-            this.#rotateSpriteMesh(camera, user.sprite, user.player.angle);
+            this.#rotateSpriteMesh(cameraPosition, user.sprite, user.player.angle);
         });
 
         // Turn visible things towards the camera
         this.#visibleThings.forEach(thing => {
             const mesh = this.#thingMeshes.get(thing);
 
-            this.#rotateSpriteMesh(camera, mesh, thing.properties.getValue('angle'));
+            this.#rotateSpriteMesh(cameraPosition, mesh, thing.properties.getValue('angle'));
         });
     }
 
