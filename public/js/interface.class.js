@@ -54,6 +54,7 @@ export default class Interface {
     /** @type {Object} Cached HTML elements. */
     #elements = {
         buttonLoadMiniwad: null,
+        buttonGoOnline: null,
         buttonLoadWad: null,
         buttonLoadPk3: null,
         buttonClearAll: null,
@@ -102,6 +103,7 @@ export default class Interface {
 
         // Cache elements
         this.#elements.buttonLoadMiniwad = document.querySelector('.wad-button__load-miniwad');
+        this.#elements.buttonGoOnline = document.querySelector('.wad-button__go-online');
         this.#elements.buttonLoadWad = document.querySelector('.wad-button__load-wad');
         this.#elements.buttonLoadPk3 = document.querySelector('.wad-button__load-pk3');
         this.#elements.buttonClearAll = document.querySelector('.wad-button__clear-all');
@@ -1213,6 +1215,17 @@ export default class Interface {
             await refreshResources();
 
             setBusy(false);
+        });
+
+        // Go online
+        this.#elements.buttonGoOnline.addEventListener('click', () => {
+            if (!window.confirm('Start an online room? Your current map will not be saved.')) {
+                return;
+            }
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('online', '');
+            window.location.href = url.toString();
         });
 
         // Load WAD file

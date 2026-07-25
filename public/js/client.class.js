@@ -88,6 +88,9 @@ export default class Client extends EventTarget {
         const params = new URLSearchParams(window.location.search);
 
         this.#offlineMode = !params.has('online');
+        if (!this.#offlineMode) {
+            document.querySelector('.wad-button__go-online').style.visibility = 'hidden';
+        }
 
         const username = this.#offlineMode ? 'Me' :
             (params.get('username') ?? prompt('What is your username?', 'Noname'));
@@ -116,6 +119,26 @@ export default class Client extends EventTarget {
         const serverUrl = params.get('server') ?? window.location.origin;
 
         this.#socket = io(serverUrl, { transports: ['websocket'], reconnection: true });
+
+        let connectionErrorShown = false;
+
+        this.#socket.on('connect_error', error => {
+            console.error('[client] Online mode unavailable:', error);
+
+            if (connectionErrorShown) {
+                return;
+            }
+
+            connectionErrorShown = true;
+
+            alert('This server does not support online rooms. Returning to offline mode...');
+
+            const url = new URL(window.location.href);
+            url.searchParams.delete('online');
+            url.searchParams.delete('room');
+            url.searchParams.delete('token');
+            window.location.replace(url.toString());
+        });
 
         this.#socket.on('connect', () => {
             console.log('[client] Connected to server');
