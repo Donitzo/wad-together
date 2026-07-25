@@ -87,7 +87,7 @@ Close the launcher when you are finished.
 
 ## Using the Editor
 
-The editor should feel familiar to anyone with experience using Doom, Duke3D, or Blender.
+The editor should feel familiar to anyone with experience using the Doom / Duke3D builders or Blender.
 
 On the left side of the screen is the sidebar, which contains the following tabs:
 
