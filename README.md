@@ -106,6 +106,10 @@ On the left side of the screen is the sidebar, which contains the following tabs
 <img src="./images/inspector1.png">
 <img src="./images/inspector2.png">
 
+**Tip:** You can render textured sectors in the 2D editor using the <img width="20px" src="./public/images/ui/show_textures__disabled.png"> button.
+
+<img src="./images/textured_editor.png">
+
 ### Navigation
 
 Press `Tab` to switch between the 2D and 3D viewports.
