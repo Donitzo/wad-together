@@ -142,6 +142,10 @@ Use the trigger to switch between overhead and first-person modes. In overhead m
 
 <img width="350px" src="./public/images/vr_controls.png">
 
+<img src="./images/vr.gif">
+
+<img src="./images/xr.png">
+
 ## Development and Feedback
 
 The editor is still under development, and compatibility testing is ongoing.
