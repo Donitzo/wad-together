@@ -101,6 +101,10 @@ On the left side of the screen is the sidebar, which contains the following tabs
 * **Things** <img width="20px" src="./public/images/ui/things.png"> - Browser for the currently loaded Things, along with the built-in defaults.
 * **Sounds** <img width="20px" src="./public/images/ui/sounds.png"> - Lists all sound effects found in the currently loaded WAD files.
 
+#### About WAD files
+
+WAD files are loaded as an ordered resource stack. Files loaded later take precedence when multiple WADs contain resources with the same lump name. The stack is used to resolve textures, flats, sounds, Things, and available maps. External resource WADs are not embedded in exported maps, both to simplify the editor and to avoid potential copyright issues. WAD files are not shared automatically between clients. Each client must have their own local copies of all WADs used by the map, or they will see blank textures.
+
 **Note:** Property visibility and the export format (Binary WAD or UDMF TextMap) are determined by the selected source port in **Map Metadata**. Try switching between ports to see which properties are available.
 
 <img src="./images/inspector1.png">
