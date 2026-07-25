@@ -883,8 +883,9 @@ export default class Editor3D {
             const delta = Math.sign(-mouseWheelDelta) * (shiftHeld ? 1 : 8)
 
             const sector = hovered.type === 'sector' ? hovered.sector :
-                hovered.isFront ? hovered.line.backSector :
-                hovered.line.frontSector ?? hovered.line.backSector;
+                hovered.isFront
+                    ? hovered.line.backSector ?? hovered.line.frontSector
+                    : hovered.line.frontSector ?? hovered.line.backSector;
 
             if (sector === null) {
                 return;
