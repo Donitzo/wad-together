@@ -18,8 +18,8 @@ export default class VectorEditor {
             pinchSpeed: 0.005,
         },
         hover: {
-            lineDistance: 15,
-            vertexDistance: 20,
+            lineDistance: 20,
+            vertexDistance: 25,
         },
     };
 

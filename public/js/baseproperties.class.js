@@ -102,7 +102,7 @@ export default class BaseProperties {
             this.maxLength = padPorts('maxLength', get('maxLength', 256));
             this.ports = padPorts('ports', get('ports', true));
             this.default = get('default');
-            this.udmfDefault = get('udmfDefault', this.default);
+            this.udmfDefault = padPorts('udmfDefault', get('udmfDefault', this.default));
             this.hidden = get('hidden', false);
             this.export = get('export', true);
             this.alwaysExport = get('alwaysExport', false);
@@ -388,7 +388,7 @@ export default class BaseProperties {
             ? property.wadKeyBitCount[port]
             : property.udmfKeyBitCount[port];
         const getExportDefault = property => format === 'udmf'
-            ? property.udmfDefault
+            ? property.udmfDefault[port]
             : property.default;
         const getPackedValue = (property, value, bitCount) => {
             if (property.type === 'boolean') {
@@ -503,14 +503,14 @@ export default class BaseProperties {
 
         this.constructor._properties.forEach(property => {
             const defaultValue = format === 'udmf'
-                ? property.udmfDefault
+                ? property.udmfDefault[port]
                 : property.default;
 
             this.#values.set(property.key, defaultValue);
         });
 
         for (const [key, value] of Object.entries(properties)) {
-            const entries = map.get(key);
+            const entries = map.get(key.toLowerCase());
             if (entries === undefined) {
                 continue;
             }

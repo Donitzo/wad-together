@@ -50,7 +50,7 @@ export default class MapTransformer {
         ['doom', 'doom_udmf'],
         ['hexen', 'hexen_udmf'],
         ['zdoom', 'zdoom_udmf'],
-        ['gzdoom', 'gzdoom_udmf'],
+        ['gzdoom', 'zdoom_udmf'],
     ]);
 
     /** @type {Map<string, string>} UDMF namespace emitted for each UDMF port. */
@@ -58,7 +58,7 @@ export default class MapTransformer {
         ['doom_udmf', 'doom'],
         ['hexen_udmf', 'hexen'],
         ['zdoom_udmf', 'zdoom'],
-        ['gzdoom_udmf', 'gzdoom'],
+        ['gzdoom_udmf', 'zdoom'],
     ]);
 
     /**

@@ -120,7 +120,7 @@ export default class SideProperties extends BaseProperties {
                 hexen_udmf: false,
                 zdoom_doom_wad: false,
                 zdoom_hexen_wad: false,
-                zdoom_udmf: false,
+                zdoom_udmf: true,
                 gzdoom_doom_wad: false,
                 gzdoom_hexen_wad: false,
                 gzdoom_udmf: true,
