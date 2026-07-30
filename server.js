@@ -7,10 +7,10 @@ import { Server } from 'socket.io';
 
 const VERSION = '0.9';
 
-// Seconds until server closes by itself with no activity. 0 to disable.
+// Seconds until server closes by itself with no activity
 const ENABLE_TIMEOUT = false;
-const IDLE_CLOSE_SECONDS = ENABLE_TIMEOUT ? 1800 : 0;
-const IDLE_CLOSE_SECONDS_NO_USERS = ENABLE_TIMEOUT ? 300 : 0;
+const IDLE_CLOSE_SECONDS = 1800;
+const IDLE_CLOSE_SECONDS_NO_ROOMS = 300;
 const FORCE_CLOSE_SECONDS = 60;
 
 const PORT = process.env.PORT || 8080;
@@ -74,6 +74,10 @@ const close = () => {
 };
 
 const resetCloseTimeout = () => {
+    if (!ENABLE_TIMEOUT) {
+        return;
+    }
+
     if (closeTimeout !== null) {
         clearTimeout(closeTimeout);
         closeTimeout = null;
@@ -84,12 +88,8 @@ const resetCloseTimeout = () => {
     }
 
     const seconds = rooms.size === 0
-        ? IDLE_CLOSE_SECONDS_NO_USERS
+        ? IDLE_CLOSE_SECONDS_NO_ROOMS
         : IDLE_CLOSE_SECONDS;
-
-    if (seconds <= 0) {
-        return;
-    }
 
     closeTimeout = setTimeout(() => {
         closeTimeout = null;
@@ -560,25 +560,6 @@ io.on('connection', socket => {
 
         const room = user.room;
 
-        if (!user.isAdmin && !closing) {
-            user.removalTimeout = setTimeout(() => {
-                user.removalTimeout = null;
-
-                if (user.socket !== null ||
-                    room.users[user.index] !== user) {
-                    return;
-                }
-
-                room.users[user.index] = null;
-
-                console.log(`\x1b[32m[server] ${room}: Removed disconnected ${user}`);
-
-                sendUsers(room);
-            }, USER_RECONNECT_GRACE_SECONDS * 1000);
-
-            user.removalTimeout.unref();
-        }
-
         console.log(`\x1b[32m[server] ${room}: ${user} disconnected`);
 
         socket.to(room.token).emit('chat', {
@@ -589,18 +570,52 @@ io.on('connection', socket => {
             time: Date.now(),
         });
 
-        if (user.isAdmin) {
+        if (closing) {
+            return;
+        }
+
+        user.removalTimeout = setTimeout(() => {
+            user.removalTimeout = null;
+
+            if (user.socket !== null ||
+                room.users[user.index] !== user) {
+                return;
+            }
+
+            if (!user.isAdmin) {
+                room.users[user.index] = null;
+
+                console.log(`\x1b[32m[server] ${room}: Removed disconnected ${user}`);
+
+                sendUsers(room);
+
+                return;
+            }
+
             console.log(`\x1b[32m[server] ${room}: Closed (token=${room.token.slice(0,4)})`);
 
             io.to(room.token).emit('kicked', { reason: 'Room closed due to admin leaving.', type: 'room_closure' });
+
             room.users.forEach(user => {
-                if (user !== null && user.socket !== null) {
-                    user.socket.disconnect(true);
-                    user.socket = null;
+                if (user !== null) {
+                    if (user.removalTimeout !== null) {
+                        clearTimeout(user.removalTimeout);
+                        user.removalTimeout = null;
+                    }
+
+                    if (user.socket !== null) {
+                        user.socket.disconnect(true);
+                        user.socket = null;
+                    }
                 }
             });
+
             rooms.delete(room.token);
-        }
+
+            resetCloseTimeout();
+        }, USER_RECONNECT_GRACE_SECONDS * 1000);
+
+        user.removalTimeout.unref();
 
         resetCloseTimeout();
 
