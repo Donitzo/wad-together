@@ -69,6 +69,7 @@ const close = () => {
         io.close(() => {
             clearTimeout(forceCloseTimeout);
             console.log('[server] Closed');
+            process.exit(0);
         });
     }, 250);
 };
