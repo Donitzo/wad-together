@@ -8,7 +8,9 @@ import { Server } from 'socket.io';
 const VERSION = '0.9';
 
 // Seconds until server closes by itself with no activity. 0 to disable.
-const IDLE_CLOSE_SECONDS = 0;
+const ENABLE_TIMEOUT = false;
+const IDLE_CLOSE_SECONDS = ENABLE_TIMEOUT ? 1800 : 0;
+const IDLE_CLOSE_SECONDS_NO_USERS = ENABLE_TIMEOUT ? 300 : 0;
 const FORCE_CLOSE_SECONDS = 60;
 
 const PORT = process.env.PORT || 8080;
@@ -72,15 +74,28 @@ const close = () => {
 };
 
 const resetCloseTimeout = () => {
-    if (IDLE_CLOSE_SECONDS === null || IDLE_CLOSE_SECONDS <= 0 || closing) {
+    if (closeTimeout !== null) {
+        clearTimeout(closeTimeout);
+        closeTimeout = null;
+    }
+
+    if (closing) {
         return;
     }
 
-    if (closeTimeout !== null) {
-        clearTimeout(closeTimeout);
+    const seconds = rooms.size === 0
+        ? IDLE_CLOSE_SECONDS_NO_USERS
+        : IDLE_CLOSE_SECONDS;
+
+    if (seconds <= 0) {
+        return;
     }
 
-    closeTimeout = setTimeout(close, IDLE_CLOSE_SECONDS * 1000);
+    closeTimeout = setTimeout(() => {
+        closeTimeout = null;
+        close();
+    }, seconds * 1000);
+
     closeTimeout.unref();
 };
 
@@ -114,8 +129,6 @@ io.on('connection', socket => {
             return;
         }
         let { roomToken, roomName, username, userId } = data;
-
-        resetCloseTimeout();
 
         let room = null;
 
@@ -277,6 +290,8 @@ io.on('connection', socket => {
         console.log(`\x1b[32m[server] ${room}: ${user} joined`);
 
         sendUsers(room);
+
+        resetCloseTimeout();
     });
 
     socket.on('request_map', () => {
@@ -545,7 +560,7 @@ io.on('connection', socket => {
 
         const room = user.room;
 
-        if (!user.isAdmin) {
+        if (!user.isAdmin && !closing) {
             user.removalTimeout = setTimeout(() => {
                 user.removalTimeout = null;
 
@@ -560,6 +575,8 @@ io.on('connection', socket => {
 
                 sendUsers(room);
             }, USER_RECONNECT_GRACE_SECONDS * 1000);
+
+            user.removalTimeout.unref();
         }
 
         console.log(`\x1b[32m[server] ${room}: ${user} disconnected`);
@@ -584,6 +601,8 @@ io.on('connection', socket => {
             });
             rooms.delete(room.token);
         }
+
+        resetCloseTimeout();
 
         sendUsers(room);
     });
