@@ -2,6 +2,8 @@
 
 ### [Try the editor right now at Github Pages](https://donitzo.github.io/wad-together/)
 
+**Note:** Do not upload sensitive map data to online rooms. Rooms are offline by default, anyone who joins an online room receives a copy.
+
 ## Project Overview
 
 WAD Together is an experimental Doom map editor that runs entirely in your web browser. It includes a 2D editing view, a real-time 3D preview, and support for most popular Doom ports.
@@ -41,7 +43,7 @@ If you encounter a compatibility issue, or if there is a port or format you woul
 
 ## Quick Start
 
-To get started, you can either host your own Node.js server or use the [online editor](https://donitzo.github.io/wad-together/). Note that multiplayer requires the full Node.js server. The GitHub Pages version hosts only the static editor and does not support multiplayer.
+To get started, you can either host your own Node.js server or use the [online editor](https://donitzo.github.io/wad-together/). Note that multiplayer requires the full Node.js server. The GitHub Pages version connects to a third-party [fly.io](https://fly.io/) server for multiplayer support.
 
 ### Installation
 
