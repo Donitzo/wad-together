@@ -19,7 +19,7 @@ const DOOM_ARGUMENTS = [
     '-window',
 ];
 
-const SKILL = '4';
+const SKILL = '5';
 
 const SUPPORTED_RESOURCE_FILE_EXTENSIONS = [
     '.wad',
@@ -147,13 +147,13 @@ socketServer.on('connection', socket => {
 
         const args = [
             ...DOOM_ARGUMENTS,
+            '-skill',
+            SKILL,
             '-iwad',
             iwadPath,
             '-file',
             ...extraPaths,
             generatedMapPath,
-            '-skill',
-            SKILL,
             '+map',
             mapName,
         ];
