@@ -11,12 +11,15 @@ import { io } from './lib/socket.io.esm.min.js';
  */
 export default class Client extends EventTarget {
     /** @type {string} Network protocol version expected from the server. */
-    static #VERSION = '0';
+    static #VERSION = '0.9';
 
     /** @type {number} Maximum permitted chat-message length. */
     static #MAX_MESSAGE_LENGTH = 256;
     /** @type {number} Delay before retrying a failed map request, in seconds. */
     static #REQUEST_MAP_RETRY_SECONDS = 10;
+
+    /** @type {?string} Socket server override. */
+    static #SOCKET_SERVER = null;
 
     /** @type {?DoomMap} Edited map. */
     #map = null;
@@ -116,7 +119,7 @@ export default class Client extends EventTarget {
             return;
         }
 
-        const serverUrl = params.get('server') ?? window.location.origin;
+        const serverUrl = Client.#SOCKET_SERVER ?? window.location.origin;
 
         this.#socket = io(serverUrl, { transports: ['websocket'], reconnection: true });
 

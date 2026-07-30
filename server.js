@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import express from 'express';
-import fs from 'fs';
 import http from 'http';
 import os from 'os';
 import path from 'path';
@@ -8,8 +7,8 @@ import { Server } from 'socket.io';
 
 const VERSION = '0.9';
 
-// Seconds until server closes by itself with no users or activity. 0 to disable.
-const IDLE_CLOSE_SECONDS = 300 * 0;
+// Seconds until server closes by itself with no activity. 0 to disable.
+const IDLE_CLOSE_SECONDS = 1800;
 const FORCE_CLOSE_SECONDS = 60;
 
 const PORT = process.env.PORT || 8080;
@@ -48,16 +47,16 @@ let closeTimeout = null;
 let closing = false;
 
 const close = () => {
-    server.getConnections((error, connectionCount) => {
-        if (error === null && connectionCount > 0) {
-            resetCloseTimeout();
-            return;
-        }
+    if (closing) {
+        return;
+    }
+    closing = true;
 
-        closing = true;
+    console.log('[server] Closing due to inactivity');
 
-        console.log('[server] Closing due to inactivity');
+    io.emit('kicked', { reason: 'Server shutting down due to inactivity.', type: 'room_closure' });
 
+    setTimeout(() => {
         const forceCloseTimeout = setTimeout(() => {
             console.error('[server] Force closing process');
             process.exit(1);
@@ -69,15 +68,11 @@ const close = () => {
             clearTimeout(forceCloseTimeout);
             console.log('[server] Closed');
         });
-    });
+    }, 250);
 };
 
 const resetCloseTimeout = () => {
-    if (IDLE_CLOSE_SECONDS === null || IDLE_CLOSE_SECONDS <= 0) {
-        return;
-    }
-
-    if (closing) {
+    if (IDLE_CLOSE_SECONDS === null || IDLE_CLOSE_SECONDS <= 0 || closing) {
         return;
     }
 
@@ -89,7 +84,7 @@ const resetCloseTimeout = () => {
     closeTimeout.unref();
 };
 
-app.use((req, res, next) => {
+app.get('/', (req, res, next) => {
     resetCloseTimeout();
     next();
 });
@@ -103,8 +98,6 @@ app.get('/', (req, res) => {
 const rooms = new Map();
 
 io.on('connection', socket => {
-    resetCloseTimeout();
-
     const ip = socket.handshake.address.replace(/^::ffff:/, '');
     socket.ip = crypto.createHash('sha256').update(ip).digest('hex');
 
@@ -121,6 +114,8 @@ io.on('connection', socket => {
             return;
         }
         let { roomToken, roomName, username, userId } = data;
+
+        resetCloseTimeout();
 
         let room = null;
 
@@ -226,7 +221,7 @@ io.on('connection', socket => {
             if (room.admin === null) {
                 room.admin = user;
                 user.isAdmin = true;
-                user.allowEditing = true,
+                user.allowEditing = true;
                 user.color = ADMIN_COLOR;
             }
         }
@@ -291,6 +286,8 @@ io.on('connection', socket => {
         }
         const room = user.room;
 
+        resetCloseTimeout();
+
         if (room.admin.socket !== null) {
             console.log(`\x1b[36m[server] ${room}: ${user} requested map from admin`);
 
@@ -315,6 +312,8 @@ io.on('connection', socket => {
             return;
         }
 
+        resetCloseTimeout();
+
         const payload = {
             message,
             senderUsername: user.username,
@@ -334,8 +333,6 @@ io.on('connection', socket => {
     });
 
     socket.on('transaction', data => {
-        resetCloseTimeout();
-
         if (typeof data !== 'object' || data === null) {
             return;
         }
@@ -352,18 +349,35 @@ io.on('connection', socket => {
             return;
         }
 
+        resetCloseTimeout();
+
         const firstOp = String(operations[0]?.op ?? 'nop');
         const opCount = operations.length ?? 0;
 
         if (user.isAdmin) {
             const transactionIndex = room.transactionIndex++;
 
-            socket.broadcast.to(to ?? room.token).emit('transaction', {
+            const payload = {
                 operations,
                 transactionId,
                 transactionIndex,
                 senderIndex: senderIndex ?? user.index,
-            });
+            };
+
+            if (typeof to === 'string') {
+                socket.broadcast.to(to).emit('transaction', payload);
+                socket.broadcast
+                    .to(room.token)
+                    .except(to)
+                    .emit('transaction', {
+                        operations: [],
+                        transactionId,
+                        transactionIndex,
+                        senderIndex: null,
+                    });
+            } else {
+                socket.broadcast.to(room.token).emit('transaction', payload);
+            }
 
             if (operations.length === 0) {
                 console.log(`\x1b[36m[server] ${room}: ${user} issued NOP to "${to}"`);
@@ -409,6 +423,8 @@ io.on('connection', socket => {
             return;
         }
 
+        resetCloseTimeout();
+
         room.bannedIps.set(target.socket.ip, target.username);
 
         console.warn(`\x1b[33m[server] ${room}: ${user} banned ${target}`);
@@ -452,6 +468,8 @@ io.on('connection', socket => {
             return;
         }
 
+        resetCloseTimeout();
+
         target.socket.emit('kicked', { reason: 'You have been kicked from the server.', type: 'kick' });
         target.socket.disconnect(true);
 
@@ -485,6 +503,8 @@ io.on('connection', socket => {
         if (target === undefined || target === null) {
             return;
         }
+
+        resetCloseTimeout();
 
         target.allowEditing = !!allowEditing;
 
