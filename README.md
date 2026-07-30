@@ -2,7 +2,7 @@
 
 ### [Try the editor right now at Github Pages](https://donitzo.github.io/wad-together/)
 
-**Note:** Do not upload sensitive map data to online rooms. Rooms are offline by default, anyone who joins an online room receives a copy of the current map.
+**Note:** Do not upload sensitive map data to online rooms. Rooms are offline by default, anyone who joins an online room via the URL receives a copy of the current map.
 
 ## Project Overview
 
