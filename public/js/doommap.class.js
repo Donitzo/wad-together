@@ -3960,6 +3960,10 @@ export default class DoomMap extends EventTarget {
                 properties.texturemiddle = fallbackTexture;
             }
 
+            if (properties.texturemiddle === '') {
+                properties.texturemiddle = '-';
+            }
+
             document.sidedefs.push(properties);
             return document.sidedefs.length - 1;
         };
