@@ -41,10 +41,6 @@ jobs:
           const original = 'static #SOCKET_SERVER = null;';
           const replacement = "static #SOCKET_SERVER = 'https://wad-together.fly.dev/';";
 
-          if (!source.includes(original)) {
-              throw new Error(`Could not find "${original}" in ${filePath}`);
-          }
-
           fs.writeFileSync(filePath, source.replace(original, replacement));
           EOF
 

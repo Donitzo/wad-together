@@ -8,7 +8,7 @@ import { Server } from 'socket.io';
 const VERSION = '0.9';
 
 // Seconds until server closes by itself with no activity. 0 to disable.
-const IDLE_CLOSE_SECONDS = 1800;
+const IDLE_CLOSE_SECONDS = 0;
 const FORCE_CLOSE_SECONDS = 60;
 
 const PORT = process.env.PORT || 8080;
