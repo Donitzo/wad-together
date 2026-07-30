@@ -19,6 +19,8 @@ const DOOM_ARGUMENTS = [
     '-window',
 ];
 
+const SKILL = '4';
+
 const SUPPORTED_RESOURCE_FILE_EXTENSIONS = [
     '.wad',
     '.pk3',
@@ -150,6 +152,8 @@ socketServer.on('connection', socket => {
             '-file',
             ...extraPaths,
             generatedMapPath,
+            '-skill',
+            SKILL,
             '+map',
             mapName,
         ];
