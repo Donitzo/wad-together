@@ -171,7 +171,7 @@ The editor is still under development, and compatibility testing is ongoing.
 
 If you encounter a compatibility issue, please [open an issue](https://github.com/Donitzo/wad-together/issues) with the `compatibility` label. You may also submit a pull request to update the compatibility table.
 
-For general bug reports, [open an issue](https://github.com/Donitzo/wad-together/issues) with the `bug` label. For feature requests, use the `feature-request` label.
+For general bug reports, [open an issue](https://github.com/Donitzo/wad-together/issues) with the `bug` label. For feature requests, use the `feature-request` label. Use `enhancement` for general improvement suggestions.
 
 ## License
 
