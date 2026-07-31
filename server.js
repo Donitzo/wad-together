@@ -5,30 +5,42 @@ import os from 'os';
 import path from 'path';
 import { Server } from 'socket.io';
 
+// Version of the multiplayer server protocol
 const VERSION = '0.9';
 
-// Seconds until server closes by itself with no activity
+// Whether the server automatically shuts down after inactivity
 const ENABLE_TIMEOUT = false;
+// Number of inactive seconds before closing a server that still has rooms
 const IDLE_CLOSE_SECONDS = 1800;
+// Number of inactive seconds before closing a server with no rooms
 const IDLE_CLOSE_SECONDS_NO_ROOMS = 300;
+// Maximum number of seconds allowed for a graceful shutdown before forcing exit
 const FORCE_CLOSE_SECONDS = 60;
 
+// Network port
 const PORT = process.env.PORT || 8080;
 
+// Maximum number of rooms that can exist at the same time
 const MAX_ROOMS = 64;
+// Maximum number of users allowed in a single room
 const MAX_USERS_PER_ROOM = 256;
+// Maximum number of characters allowed in room names and usernames
 const MAX_NAME_LENGTH = 64;
+// Maximum number of characters allowed in a chat message
 const MAX_MESSAGE_LENGTH = 256;
-
+// Number of seconds a disconnected user has to reconnect before being removed
 const USER_RECONNECT_GRACE_SECONDS = 30;
-
+// Determines whether newly connected users can edit by default
 const DEFAULT_ALLOW_EDITING = true;
 
+// Absolute path to the directory containing the client-side static files
 const STATIC_PATH = path.resolve('public');
 
-// https://github.com/SabrinaSun1225/ChromaPalette
+// Chat color assigned to the room administrator
 const ADMIN_COLOR = '#4995C6';
+// Chat color used for automated server messages
 const SERVER_COLOR = '#B9181A';
+// Available chat colors assigned to regular users
 const CHAT_COLORS = [
     '#FAB6E6', '#FC8002', '#ADDB88', '#369F2D',
     '#FAC7B3', '#EE4431'/*, '#B9181A'*/, '#CEDFEF',
