@@ -9,7 +9,7 @@ import { Server } from 'socket.io';
 const VERSION = '0.9';
 
 // Whether the server automatically shuts down after inactivity
-const ENABLE_TIMEOUT = true;
+const ENABLE_TIMEOUT = false;
 // Number of inactive seconds before closing a server that still has rooms
 const IDLE_CLOSE_SECONDS = 1800;
 // Number of inactive seconds before closing a server with no rooms
