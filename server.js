@@ -9,7 +9,7 @@ import { Server } from 'socket.io';
 const VERSION = '0.9';
 
 // Whether the server automatically shuts down after inactivity
-const ENABLE_TIMEOUT = false;
+const ENABLE_TIMEOUT = true;
 // Number of inactive seconds before closing a server that still has rooms
 const IDLE_CLOSE_SECONDS = 1800;
 // Number of inactive seconds before closing a server with no rooms
@@ -185,25 +185,19 @@ io.on('connection', socket => {
 
                 return;
             }
-
-            let userCount = 0;
-
-            room.users.forEach(user => {
-                if (user !== null) {
-                    userCount++;
-                }
-            });
-
-            if (userCount >= MAX_USERS_PER_ROOM) {
-              socket.emit('kicked', { reason: 'Room user limit reached.', type: 'server_full' });
-              socket.disconnect(true);
-              return;
-            }
         }
 
         let user = room.users.find(candidate => candidate !== null && userId === candidate.id);
 
         if (user === undefined) {
+            const userCount = room.users.reduce((count, candidate) => count + (candidate !== null), 0);
+
+            if (userCount >= MAX_USERS_PER_ROOM) {
+                socket.emit('kicked', { reason: 'Room user limit reached.', type: 'server_full' });
+                socket.disconnect(true);
+                return;
+            }
+
             if (typeof username !== 'string' || username.trim().length === 0) {
                 username = 'anonymous';
             } else {
@@ -350,10 +344,12 @@ io.on('connection', socket => {
             time: Date.now(),
         };
 
-        if (to) {
-            io.to(to).emit('chat', payload);
-            socket.emit('chat', payload);
-            console.log(`\x1b[32m[server] ${room}: Private chat from ${user} to ${to}`);
+        if (to !== undefined && to !== null) {
+            if (room.users.some(user => user.socket?.id === to)) {
+                io.to(to).emit('chat', payload);
+                socket.emit('chat', payload);
+                console.log(`\x1b[32m[server] ${room}: Private chat from ${user} to ${to}`);
+            }
         } else {
             io.to(room.token).emit('chat', payload);
             console.log(`\x1b[32m[server] ${room}: Broadcast chat from ${user}: "${message}"`);
@@ -372,6 +368,11 @@ io.on('connection', socket => {
         }
         const room = user.room;
 
+        if (!user.allowEditing && !user.isAdmin) {
+            console.warn(`[server] ${user} is not allowed to edit map`);
+            return;
+        }
+
         if (!Array.isArray(operations)) {
             console.warn(`[server] ${user} sent invalid operations array`);
             return;
@@ -383,34 +384,44 @@ io.on('connection', socket => {
         const opCount = operations.length ?? 0;
 
         if (user.isAdmin) {
-            const transactionIndex = room.transactionIndex++;
-
-            const payload = {
-                operations,
-                transactionId,
-                transactionIndex,
-                senderIndex: senderIndex ?? user.index,
-            };
-
-            if (typeof to === 'string') {
-                socket.broadcast.to(to).emit('transaction', payload);
-                socket.broadcast
-                    .to(room.token)
-                    .except(to)
-                    .emit('transaction', {
-                        operations: [],
+            if (to !== undefined && to !== null) {
+                if (room.users.some(user => user.socket?.id === to)) {
+                    socket.broadcast.to(to).emit('transaction', {
+                        operations,
                         transactionId,
-                        transactionIndex,
-                        senderIndex: null,
+                        transactionIndex: room.transactionIndex,
+                        senderIndex: senderIndex ?? user.index,
                     });
-            } else {
-                socket.broadcast.to(room.token).emit('transaction', payload);
-            }
 
-            if (operations.length === 0) {
-                console.log(`\x1b[36m[server] ${room}: ${user} issued NOP to "${to}"`);
+                    socket.broadcast
+                        .to(room.token)
+                        .except(to)
+                        .emit('transaction', {
+                            operations: [],
+                            transactionId,
+                            transactionIndex: room.transactionIndex,
+                            senderIndex: null,
+                        });
+
+                    if (operations.length === 0) {
+                        console.log(`\x1b[36m[server] ${room}: ${user} issued NOP to "${to}"`);
+                    } else {
+                        console.log(`\x1b[36m[server] ${room}: Broadcast T<${room.transactionIndex}:${String(transactionId).slice(0, 4)}:${firstOp}:${opCount}>`);
+                    }
+
+                    room.transactionIndex++;
+                }
             } else {
-                console.log(`\x1b[36m[server] ${room}: Broadcast T<${transactionIndex}:${String(transactionId).slice(0, 4)}:${firstOp}:${opCount}>`);
+                socket.broadcast.to(room.token).emit('transaction', {
+                    operations,
+                    transactionId,
+                    transactionIndex: room.transactionIndex,
+                    senderIndex: senderIndex ?? user.index,
+                });
+
+                console.log(`\x1b[36m[server] ${room}: Broadcast T<${room.transactionIndex}:${String(transactionId).slice(0, 4)}:${firstOp}:${opCount}>`);
+
+                room.transactionIndex++;
             }
         } else if (room.admin.socket !== null) {
             room.admin.socket.emit('validate', {
@@ -457,6 +468,7 @@ io.on('connection', socket => {
 
         console.warn(`\x1b[33m[server] ${room}: ${user} banned ${target}`);
 
+        room.users[target.index] = null;
         target.socket.emit('kicked', { reason: 'You have been banned from the room.', type: 'banned' });
         target.socket.disconnect(true);
 
@@ -498,6 +510,7 @@ io.on('connection', socket => {
 
         resetCloseTimeout();
 
+        room.users[target.index] = null;
         target.socket.emit('kicked', { reason: 'You have been kicked from the server.', type: 'kick' });
         target.socket.disconnect(true);
 
