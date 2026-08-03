@@ -99,8 +99,12 @@ export default class Client extends EventTarget {
             (params.get('username') ?? prompt('What is your username?', 'Noname'));
         let roomName = params.get('room') ?? 'test room';
         let roomToken = params.get('token') ?? null;
+        if (roomToken !== null) {
+            roomToken = roomToken.trim();
+        }
 
-        let userId = localStorage.getItem('userId') ?? null;
+        let userId = roomToken === null || roomToken.length === 0 ? null
+            : localStorage.getItem(`multiplayerUserId:${roomToken}`);
 
         if (this.#offlineMode) {
             this.#userIndex = 0;
@@ -174,13 +178,6 @@ export default class Client extends EventTarget {
             connectionStatus.classList.add('editor__connection--ok');
 
             this.#lastTransactionIndex = null;
-
-            this.#socket.emit('join', {
-                username,
-                roomName,
-                roomToken,
-                userId,
-            });
         });
 
         this.#socket.on('welcome', data => {
@@ -189,6 +186,21 @@ export default class Client extends EventTarget {
                 alert('Client and server versions are incompatible. Please refresh page.');
                 this.#socket.disconnect();
                 return;
+            }
+
+            if (data.useCustomToken) {
+                const confirmed = window.confirm('You created a room using a custom token. Custom tokens may be easier to guess than randomly generated tokens. Continue?');
+
+                if (!confirmed) {
+                    this.#socket.disconnect();
+
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('online');
+                    url.searchParams.delete('room');
+                    url.searchParams.delete('token');
+                    window.location.replace(url.toString());
+                    return;
+                }
             }
 
             roomName = data.roomName;
@@ -202,9 +214,10 @@ export default class Client extends EventTarget {
             this.#updateUsers(data.users);
 
             userId = data.userId;
-            localStorage.setItem('userId', userId);
-
             roomToken = data.roomToken;
+
+            localStorage.setItem(`multiplayerUserId:${roomToken}`, userId);
+
             const url = new URL(window.location.href);
             url.searchParams.set('token', roomToken);
             window.history.replaceState({}, '', url);
@@ -226,11 +239,15 @@ export default class Client extends EventTarget {
             this.#socket.disconnect();
         });
 
-        this.#socket.on('request_map_response', ({ to }) => {
+        this.#socket.on('request_map_response', ({ to = null }) => {
             const transactionId = crypto.randomUUID();
 
-            const user = this.#users.find(u => u.socketId === to);
-            console.log(`[client] Serialized map T<?:${transactionId.slice(0, 4)}:deserialize:1> for ${Client.#userToString(user)}`);
+            if (to === null) {
+                console.log(`[client] Broadcasting serialized map T<?:${transactionId.slice(0, 4)}:deserialize:1>`);
+            } else {
+                const user = this.#users.find(user => user.socketId === to);
+                console.log(`[client] Serialized map T<?:${transactionId.slice(0, 4)}:deserialize:1> for ${Client.#userToString(user)}`);
+            }
 
             this.#socket.emit('transaction', {
                 operations: [{

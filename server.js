@@ -143,9 +143,14 @@ io.on('connection', socket => {
         }
         let { roomToken, roomName, username, userId } = data;
 
+        if (typeof roomToken === 'string') {
+            roomToken = roomToken.trim();
+        }
+
         let room = null;
 
         const createRoom = !rooms.has(roomToken);
+        const useCustomToken = typeof roomToken === 'string' && roomToken.length > 0 && createRoom;
 
         if (createRoom) {
             if (rooms.size >= MAX_ROOMS) {
@@ -160,8 +165,10 @@ io.on('connection', socket => {
                 roomName = roomName.trim().substring(0, MAX_NAME_LENGTH);
             }
 
+            const token = useCustomToken ? roomToken : crypto.randomBytes(8).toString('hex');
+
             room = {
-                token: crypto.randomBytes(8).toString('hex'),
+                token,
                 roomName: roomName ?? 'Untitled Room',
                 users: [],
                 bannedIps: new Map(),
@@ -188,6 +195,8 @@ io.on('connection', socket => {
         }
 
         let user = room.users.find(candidate => candidate !== null && userId === candidate.id);
+
+        const adminRejoined = user !== undefined && user.isAdmin;
 
         if (user === undefined) {
             const userCount = room.users.reduce((count, candidate) => count + (candidate !== null), 0);
@@ -284,6 +293,8 @@ io.on('connection', socket => {
             users: createUserList(room),
             roomToken: room.token,
             roomName: room.roomName,
+            createRoom,
+            useCustomToken,
         });
 
         socket.to(room.token).emit('chat', {
@@ -293,6 +304,10 @@ io.on('connection', socket => {
             color: SERVER_COLOR,
             time: Date.now(),
         });
+
+        if (adminRejoined) {
+            socket.emit('request_map_response', { username: user.username });
+        }
 
         console.log(`\x1b[32m[server] ${room}: ${user} joined`);
 
