@@ -90,7 +90,7 @@ export default class Client extends EventTarget {
 
         const params = new URLSearchParams(window.location.search);
 
-        this.#offlineMode = !params.has('online');
+        this.#offlineMode = !params.has('online') && !params.has('token');
         if (!this.#offlineMode) {
             document.querySelector('.wad-button__go-online').style.visibility = 'hidden';
         }
