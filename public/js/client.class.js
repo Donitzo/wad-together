@@ -219,6 +219,7 @@ export default class Client extends EventTarget {
             localStorage.setItem(`multiplayerUserId:${roomToken}`, userId);
 
             const url = new URL(window.location.href);
+            url.searchParams.delete('online');
             url.searchParams.set('token', roomToken);
             window.history.replaceState({}, '', url);
 
