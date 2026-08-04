@@ -518,7 +518,7 @@ export default class Map3D {
             }
 
             user.sprite.visible = user.connected;
-            user.sprite.position.set(user.player.x, user.player.z - 41, -user.player.y);
+            user.sprite.position.set(user.player.x, user.player.z - 45, -user.player.y);
 
             this.#rotateSpriteMesh(cameraPosition, user.sprite, user.player.angle);
         });
