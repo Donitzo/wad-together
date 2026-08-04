@@ -334,6 +334,11 @@ export default class Interface {
                 return;
             }
 
+            const transforming =
+                vectorEditor.mode === 'move' ||
+                vectorEditor.mode === 'scale' ||
+                vectorEditor.mode === 'rotate';
+
             switch (e.key) {
                 case 'Escape':
                 case ' ':
@@ -740,7 +745,11 @@ export default class Interface {
                     break;
 
                 case 'x':
-                    if (e.ctrlKey) {
+                    if (transforming) {
+                        vectorEditor.setAxisConstraint(true, false);
+
+                        e.preventDefault();
+                    } else if (e.ctrlKey) {
                         // Serialize and cut selected geometries
                         const selection = this.#doomMap.getSelection();
                         const exclusive = DoomMap.excludeNonExclusiveGeometries(selection);
@@ -799,7 +808,11 @@ export default class Interface {
                     break;
 
                 case 'y':
-                    if (e.ctrlKey) {
+                    if (transforming) {
+                        vectorEditor.setAxisConstraint(false, true);
+
+                        e.preventDefault();
+                    } else if (e.ctrlKey) {
                         // Redo
                         redo();
 
