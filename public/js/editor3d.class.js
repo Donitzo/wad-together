@@ -115,6 +115,11 @@ export default class Editor3D {
     /** @type {boolean} Whether the initially hovered geometry was selected. */
     #firstHoveredSelected = false;
 
+    /** @type {Map<Sector, {floor: number, ceiling: number}>} Sector heights while scroll transactions are in flight. */
+    #cachedSectorHeights = new Map();
+    /** @type {?number} Sector cache clear timeout after scrolling. */
+    #sectorHeightCacheTimeout = null;
+
     /** @type {?Array<object>} VR controllers. */
     #vrControllers = null;
     /** @type {boolean} VR in overhead mode. */
@@ -756,20 +761,28 @@ export default class Editor3D {
         // Scroll texture
         if (this.#middleHeld) {
             const scrollSpeed = Editor3D.#TEXTURE_SCROLL_SPEED;
+
             const newDragX = cursorPosition.x - this.#middleDragFrom.x;
             const newDragY = cursorPosition.y - this.#middleDragFrom.y;
+
             const lastDragX = this.#middleDragCursorPosition.x - this.#middleDragFrom.x;
             const lastDragY = this.#middleDragCursorPosition.y - this.#middleDragFrom.y;
+
             this.#middleDragCursorPosition.x = cursorPosition.x;
             this.#middleDragCursorPosition.y = cursorPosition.y;
+
             const scrollX = Math.round(newDragX * scrollSpeed);
             const scrollY = Math.round(newDragY * scrollSpeed);
+
             const lastScrollX = Math.round(lastDragX * scrollSpeed);
             const lastScrollY = Math.round(lastDragY * scrollSpeed);
+
             if (scrollX !== lastScrollX || scrollY !== lastScrollY) {
                 const deltaX = scrollX - lastScrollX;
                 const deltaY = scrollY - lastScrollY;
+
                 const operations = this.#map.createTextureScrollingOperations(-deltaX, -deltaY);
+
                 if (operations.length > 0) {
                     this.#client.sendTransaction(operations);
                 }
@@ -792,6 +805,7 @@ export default class Editor3D {
                 const ceilingHeight = hovered.sector.properties.getValue('ceiling_height');
                 const floorHeight = hovered.sector.properties.getValue('floor_height');
                 const height = ceilingHeight - floorHeight;
+
                 this.#elementStatus.innerText = `F: ${floorHeight} C: ${ceilingHeight}  H: ${height}`;
             } else {
                 this.#elementStatus.innerText = '';
@@ -894,7 +908,20 @@ export default class Editor3D {
                 return;
             }
 
+            const heights = this.#getCachedSectorHeights(sector);
             const line = sector.lines[0];
+            const newHeight = Math.max(isLower ? -32768 : heights.floor,
+                Math.min(isLower ? heights.ceiling : 32768,
+                    (isLower ? heights.floor
+                    : heights.ceiling) + delta
+                )
+            );
+
+            if (isLower) {
+                heights.floor = newHeight;
+            } else {
+                heights.ceiling = newHeight;
+            }
 
             // Create the required property operation to scroll the hovered sector
             const operations = [{
@@ -904,12 +931,7 @@ export default class Editor3D {
                     line.v1.x, line.v1.y,
                     line.frontSector === sector,
                     isLower ? 'floor_height' : 'ceiling_height',
-                    Math.max(isLower ? -32768 : sector.properties.getValue('floor_height'),
-                        Math.min(isLower ? sector.properties.getValue('ceiling_height') : 32768,
-                            (isLower ? sector.properties.getValue('floor_height')
-                            : sector.properties.getValue('ceiling_height')) + delta
-                        )
-                    ),
+                    newHeight,
                 ],
             }];
 
@@ -921,7 +943,21 @@ export default class Editor3D {
                 this.#map.iterateSectors(sector2 => {
                     if (sector2 !== sector && this.#map.isSelected(
                         sector2, null, null, isLower ? null : true, null, isLower ? true : null)) {
+                        const heights2 = this.#getCachedSectorHeights(sector2);
                         const line2 = sector2.lines[0];
+                        const newHeight2 = Math.max(isLower ? -32768 : heights2.floor,
+                            Math.min(isLower ? heights2.ceiling : 32768,
+                                (isLower ? heights2.floor
+                                : heights2.ceiling) + delta
+                            )
+                        );
+
+                        if (isLower) {
+                            heights2.floor = newHeight2;
+                        } else {
+                            heights2.ceiling = newHeight2;
+                        }
+
                         operations.push({
                             op: 'setSectorPropertyBySide',
                             args: [
@@ -929,12 +965,7 @@ export default class Editor3D {
                                 line2.v1.x, line2.v1.y,
                                 line2.frontSector === sector2,
                                 property,
-                                Math.max(isLower ? -32768 : sector2.properties.getValue('floor_height'),
-                                    Math.min(isLower ? sector2.properties.getValue('ceiling_height') : 32768,
-                                        (isLower ? sector2.properties.getValue('floor_height')
-                                        : sector2.properties.getValue('ceiling_height')) + delta
-                                    )
-                                ),
+                                newHeight2,
                             ],
                         });
                     }
@@ -943,6 +974,15 @@ export default class Editor3D {
 
             // Send transaction to server
             this.#client.sendTransaction(operations);
+
+            if (this.#sectorHeightCacheTimeout !== null) {
+                clearTimeout(this.#sectorHeightCacheTimeout);
+            }
+
+            this.#sectorHeightCacheTimeout = setTimeout(() => {
+                this.#cachedSectorHeights.clear();
+                this.#sectorHeightCacheTimeout = null;
+            }, 1000);
         }
     }
 
@@ -959,5 +999,26 @@ export default class Editor3D {
         this.#map3d.update(this.#camera, this.#renderer.xr.isPresenting && this.#vrOverheadMode);
 
         this.#renderer.render(this.#scene, this.#camera);
+    }
+
+    /**
+     * Get the cached or current heights for one sector.
+     *
+     * @param {Sector} sector
+     * @returns {{ceiling: number, floor: number}}
+     */
+    #getCachedSectorHeights(sector) {
+        let heights = this.#cachedSectorHeights.get(sector);
+
+        if (heights === undefined) {
+            heights = {
+                floor: sector.properties.getValue('floor_height'),
+                ceiling: sector.properties.getValue('ceiling_height'),
+            };
+
+            this.#cachedSectorHeights.set(sector, heights);
+        }
+
+        return heights;
     }
 }
