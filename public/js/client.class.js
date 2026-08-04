@@ -127,27 +127,12 @@ export default class Client extends EventTarget {
 
         this.#socket = io(serverUrl, { transports: ['websocket'], reconnection: true });
 
-        let connectionErrorShown = false;
-
-        this.#socket.on('connect_error', error => {
-            console.error('[client] Online mode unavailable:', error);
-
-            if (connectionErrorShown) {
-                return;
-            }
-
-            connectionErrorShown = true;
-
-            alert('This server does not support online rooms. Returning to offline mode...');
-
-            const url = new URL(window.location.href);
-            url.searchParams.delete('online');
-            url.searchParams.delete('room');
-            url.searchParams.delete('token');
-            window.location.replace(url.toString());
-        });
+        let connectionAttempts = 0;
+        const maxConnectionAttempts = 5;
 
         this.#socket.on('connect', () => {
+            connectionAttempts = 0;
+
             console.log('[client] Connected to server');
 
             connectionStatus.textContent = 'Connecting to room...';
@@ -160,6 +145,35 @@ export default class Client extends EventTarget {
                 roomToken,
                 userId,
             });
+        });
+
+        this.#socket.on('connect_error', error => {
+            connectionAttempts++;
+
+            connectionStatus.textContent = 'Reconnecting...';
+            connectionStatus.classList.remove('editor__connection--ok');
+            connectionStatus.classList.add('editor__connection--error');
+
+            console.error(
+                `[client] Connection attempt ${connectionAttempts} of ${maxConnectionAttempts} failed:`,
+                error
+            );
+
+            if (connectionAttempts < maxConnectionAttempts) {
+                return;
+            }
+
+            connectionStatus.textContent = 'Connection failed';
+
+            alert('Could not connect to the multiplayer server. Returning to offline mode...');
+
+            this.#socket.disconnect();
+
+            const url = new URL(window.location.href);
+            url.searchParams.delete('online');
+            url.searchParams.delete('room');
+            url.searchParams.delete('token');
+            window.location.replace(url.toString());
         });
 
         this.#socket.on('disconnect', (reason) => {
