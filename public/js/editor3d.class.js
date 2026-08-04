@@ -165,6 +165,7 @@ export default class Editor3D {
 
                 case 1:
                     this.#middleHeld = false;
+                    this.#map.clearCachedTextureOffsets();
                     break;
 
                 case 2:
