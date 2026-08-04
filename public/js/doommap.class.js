@@ -89,6 +89,11 @@ export default class DoomMap extends EventTarget {
     /** @type {?DoomMap.Transaction} Active transaction (operations create undo/redos). */
     #transaction = null;
 
+    /** @type {Map<BaseProperties, Number>} Cached texture scroll X offset during scroll operations. */
+    #cachedOffsetX = new Map();
+    /** @type {Map<BaseProperties, Number>} Cached texture scroll Y offset during scroll operations. */
+    #cachedOffsetY = new Map();
+
     ////////////////////////////////////////////////////////////////////////////
     // Constructor
 
@@ -3215,8 +3220,11 @@ export default class DoomMap extends EventTarget {
             }
 
             if (this.#selectedFront.has(geometry)) {
-                const offsetX = (((geometry.frontProperties.getValue('x_offset') + dx) % textureSize) +
-                    textureSize) % textureSize;
+                const offsetX = ((this.#cachedOffsetX.get(geometry.frontProperties)
+                    ?? geometry.frontProperties.getValue('x_offset')) + dx + textureSize) % textureSize;
+
+                this.#cachedOffsetX.set(geometry.frontProperties, offsetX);
+
                 operations.push({
                     op: 'setSideProperty',
                     args: [
@@ -3231,8 +3239,11 @@ export default class DoomMap extends EventTarget {
                     ],
                 });
 
-                const offsetY = (((geometry.frontProperties.getValue('y_offset') + dy) % textureSize) +
-                    textureSize) % textureSize;
+                const offsetY = ((this.#cachedOffsetY.get(geometry.frontProperties)
+                    ?? geometry.frontProperties.getValue('y_offset')) + dy + textureSize) % textureSize;
+
+                this.#cachedOffsetY.set(geometry.frontProperties, offsetY);
+
                 operations.push({
                     op: 'setSideProperty',
                     args: [
@@ -3249,8 +3260,11 @@ export default class DoomMap extends EventTarget {
             }
 
             if (this.#selectedBack.has(geometry)) {
-                const offsetX = (((geometry.backProperties.getValue('x_offset') + dx) %  textureSize) +
-                    textureSize) % textureSize;
+                const offsetX = ((this.#cachedOffsetX.get(geometry.backProperties)
+                    ?? geometry.backProperties.getValue('x_offset')) + dx + textureSize) % textureSize;
+
+                this.#cachedOffsetX.set(geometry.backProperties, offsetX);
+
                 operations.push({
                     op: 'setSideProperty',
                     args: [
@@ -3265,8 +3279,11 @@ export default class DoomMap extends EventTarget {
                     ],
                 });
 
-                const offsetY = (((geometry.backProperties.getValue('y_offset') + dy) % textureSize) +
-                    textureSize) % textureSize;
+                const offsetY = ((this.#cachedOffsetY.get(geometry.backProperties)
+                    ?? geometry.backProperties.getValue('y_offset')) + dy + textureSize) % textureSize;
+
+                this.#cachedOffsetY.set(geometry.backProperties, offsetY);
+
                 operations.push({
                     op: 'setSideProperty',
                     args: [
@@ -3284,6 +3301,14 @@ export default class DoomMap extends EventTarget {
         });
 
         return operations;
+    }
+
+    /**
+     * Clears the cached texture offsets stored in createTextureScrollingOperations.
+     */
+    clearCachedTextureOffsets() {
+        this.#cachedOffsetX.clear();
+        this.#cachedOffsetY.clear();
     }
 
     ////////////////////////////////////////////////////////////////////////////
