@@ -3428,6 +3428,8 @@ export default class VectorEditor {
         transform.geometries.forEach(g => {
             const c = positions.get(g);
 
+            this.#handleGeometryChanged(g)
+
             const createdLines = new Set();
 
             if (g instanceof Vertex) {
