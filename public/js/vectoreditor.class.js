@@ -3428,7 +3428,7 @@ export default class VectorEditor {
         transform.geometries.forEach(g => {
             const c = positions.get(g);
 
-            this.#handleGeometryChanged(g)
+            this.#handleGeometryChanged(g);
 
             const createdLines = new Set();
 
@@ -3443,6 +3443,16 @@ export default class VectorEditor {
 
                 if (!isNew) {
                     g.lines.forEach(line => {
+                        this.#handleGeometryChanged(line);
+
+                        if (line.frontSector !== null) {
+                            this.#handleGeometryChanged(line.frontSector);
+                        }
+
+                        if (line.backSector !== null) {
+                            this.#handleGeometryChanged(line.backSector);
+                        }
+
                         if (positions.has(line) || createdLines.has(line)) {
                             return;
                         }
