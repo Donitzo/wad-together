@@ -97,7 +97,7 @@ export default class Client extends EventTarget {
 
         const username = this.#offlineMode ? 'Me' :
             (params.get('username') ?? prompt('What is your username?', 'Noname'));
-        let roomName = params.get('room') ?? 'test room';
+        let roomName = params.get('room') ?? 'Untitled Room';
         let roomToken = params.get('token') ?? null;
         if (roomToken !== null) {
             roomToken = roomToken.trim();
