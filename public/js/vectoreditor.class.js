@@ -301,6 +301,8 @@ export default class VectorEditor {
         translate: { x: 0, y: 0 },
         // Reference cursor world position
         start: { x: 0, y: 0 },
+        // Enabled transform axes
+        axisConstraint: { x: true, y: true },
         // Whether new geometry is being added as opposed to moved
         adding: false,
         // Geometries being transformed
@@ -1107,8 +1109,13 @@ export default class VectorEditor {
                 // Transform modes
                 switch (this.#mode) {
                     case 'move': {
-                        const translateX = snappedCursor.x - transform.start.x;
-                        const translateY = snappedCursor.y - transform.start.y;
+                        const translateX = transform.axisConstraint.x
+                            ? snappedCursor.x - transform.start.x
+                            : 0;
+
+                        const translateY = transform.axisConstraint.y
+                            ? snappedCursor.y - transform.start.y
+                            : 0;
 
                         if (translateX !== transform.translate.x ||
                             translateY !== transform.translate.y) {
@@ -1126,8 +1133,20 @@ export default class VectorEditor {
                         const dx = transform.pivot.x - worldCursor.x;
                         const dy = transform.pivot.y - worldCursor.y;
 
-                        const newScaleX = Math.abs(vx) > 1e-6 ? dx / vx : 1;
-                        const newScaleY = shiftHeld ? newScaleX : Math.abs(vy) > 1e-6 ? dy / vy : 1;
+                        let newScaleX = Math.abs(vx) > 1e-6 ? dx / vx : 1;
+                        let newScaleY = shiftHeld
+                            ? newScaleX
+                            : Math.abs(vy) > 1e-6
+                                ? dy / vy
+                                : 1;
+
+                        if (!transform.axisConstraint.x) {
+                            newScaleX = 1;
+                        }
+
+                        if (!transform.axisConstraint.y) {
+                            newScaleY = 1;
+                        }
 
                         if (newScaleX !== transform.scale.x ||
                             newScaleY !== transform.scale.y) {
@@ -1503,6 +1522,25 @@ export default class VectorEditor {
     }
 
     /**
+     * Constrains the active transform to selected axes. Repeating the current constraint clears it.
+     *
+     * @param {boolean} x - Whether the X axis is enabled.
+     * @param {boolean} y - Whether the Y axis is enabled.
+     */
+    setAxisConstraint(x, y) {
+        const constraint = this.#modeTransform.axisConstraint;
+
+        if (constraint.x === x && constraint.y === y) {
+            constraint.x = true;
+            constraint.y = true;
+            return;
+        }
+
+        constraint.x = x;
+        constraint.y = y;
+    }
+
+    /**
      * Changes the active editing mode.
      *
      * @param {?string} mode - Mode name, or `null` for selection mode.
@@ -1555,6 +1593,8 @@ export default class VectorEditor {
                     transform.scale.y = 1;
                     transform.translate.x = 0;
                     transform.translate.y = 0;
+                    transform.axisConstraint.x = true;
+                    transform.axisConstraint.y = true;
 
                     transform.applyOnRelease = applyOnRelease;
 
