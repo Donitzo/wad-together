@@ -1586,6 +1586,9 @@ export default class VectorEditor {
                 transform.start.x = this.#snappedCursorPosition.x;
                 transform.start.y = this.#snappedCursorPosition.y;
 
+                transform.axisConstraint.x = true;
+                transform.axisConstraint.y = true;
+
                 if (!transformingLast) {
                     transform.rotation = 0;
                     transform.rotationSum = 0;
@@ -1593,8 +1596,6 @@ export default class VectorEditor {
                     transform.scale.y = 1;
                     transform.translate.x = 0;
                     transform.translate.y = 0;
-                    transform.axisConstraint.x = true;
-                    transform.axisConstraint.y = true;
 
                     transform.applyOnRelease = applyOnRelease;
 
