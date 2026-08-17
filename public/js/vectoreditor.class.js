@@ -2928,7 +2928,7 @@ export default class VectorEditor {
                     ctx.fillStyle = theme.gizmos.textFill;
                     ctx.textAlign = 'right';
                     ctx.fillText(
-                        `r=${this.#modeEllipseRadius.x},${Math.abs(this.#modeEllipseRadius.y)}`,
+                        `${this.#modeEllipseRadius.x},${Math.abs(this.#modeEllipseRadius.y)}`,
                         sx - 12,
                         sy - 12
                     );
