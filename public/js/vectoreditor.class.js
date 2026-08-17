@@ -2934,8 +2934,10 @@ export default class VectorEditor {
                     );
                     const ellipse = String.fromCodePoint(0x2B2D);
                     const arc = String.fromCodePoint(0x2312);
+                    const angleChar = String.fromCodePoint(0x2220)
                     ctx.fillText(
-                        `${ellipse}${this.#modeEllipseVertices} ${isSlice && this.#subMode === 2 ? arc + this.#modeEllipseEndVertex : ''}`,
+                        `${ellipse}${this.#modeEllipseVertices} ${isSlice && this.#subMode === 2 ? arc + this.#modeEllipseEndVertex : ''}` +
+                        ` ${angleChar}${this.#subMode === 2 ? Math.round(this.#modeEllipseStartAngle * 180 / Math.PI) : ''}`,
                         sx - 12,
                         sy + 4
                     );
