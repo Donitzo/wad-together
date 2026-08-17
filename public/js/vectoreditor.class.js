@@ -2928,19 +2928,17 @@ export default class VectorEditor {
                     ctx.fillStyle = theme.gizmos.textFill;
                     ctx.textAlign = 'right';
                     ctx.fillText(
-                        `r=${this.#modeEllipseRadius.x},${Math.abs(this.#modeEllipseRadius.y)} ${ellipse}${this.#modeEllipseVertices}`,
+                        `r=${this.#modeEllipseRadius.x},${Math.abs(this.#modeEllipseRadius.y)}`,
                         sx - 12,
                         sy - 12
                     );
-                    if (this.#subMode === 2) {
-                        const ellipse = String.fromCodePoint(0x2B2D);
-                        const arc = String.fromCodePoint(0x2312);
-                        ctx.fillText(
-                            `${ellipse}${this.#modeEllipseVertices} ${isSlice ? arc + this.#modeEllipseEndVertex : ''}`,
-                            sx - 12,
-                            sy + 4
-                        );
-                    }
+                    const ellipse = String.fromCodePoint(0x2B2D);
+                    const arc = String.fromCodePoint(0x2312);
+                    ctx.fillText(
+                        `${ellipse}${this.#modeEllipseVertices} ${isSlice && this.#subMode === 2 ? arc + this.#modeEllipseEndVertex : ''}`,
+                        sx - 12,
+                        sy + 4
+                    );
                 }
 
                 break;
