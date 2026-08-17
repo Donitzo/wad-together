@@ -2937,7 +2937,7 @@ export default class VectorEditor {
                     const angleChar = String.fromCodePoint(0x2220)
                     ctx.fillText(
                         `${ellipse}${this.#modeEllipseVertices} ${isSlice && this.#subMode === 2 ? arc + this.#modeEllipseEndVertex : ''}` +
-                        ` ${angleChar}${this.#subMode === 2 ? Math.round(this.#modeEllipseStartAngle * 180 / Math.PI) : ''}`,
+                        ` ${this.#subMode === 2 ? angleChar + Math.round(this.#modeEllipseStartAngle * 180 / Math.PI) : ''}`,
                         sx - 12,
                         sy + 4
                     );
