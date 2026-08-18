@@ -781,6 +781,8 @@ export default class DoomMap extends EventTarget {
 
         const newSectors = [];
 
+        const sectorLines = new Set(this.#modifiedLines);
+
         // For each interior loop, construct a sector and assign it to the left side of each edge
         loops.forEach(loop => {
             const newLines = loop.map(edge => ({
@@ -791,10 +793,13 @@ export default class DoomMap extends EventTarget {
             const sector = new Sector(this, this.#lineMap, newLines);
             newSectors.push(sector);
             this.#addSectorPrimitive(sector);
+            sector.lines.forEach(line => {
+                sectorLines.add(line);
+            });
         });
 
         // Convert between single sided and double sided lines
-        this.#modifiedLines.forEach(l => {
+        sectorLines.forEach(l => {
             if (!this.#lines.has(l)) {
                 return;
             }
