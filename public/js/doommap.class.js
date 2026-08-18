@@ -790,11 +790,21 @@ export default class DoomMap extends EventTarget {
                 v1: edge.line.v1,
                 front: edge.front,
             }));
+
             const sector = new Sector(this, this.#lineMap, newLines);
+
             newSectors.push(sector);
+
             this.#addSectorPrimitive(sector);
+
             sector.lines.forEach(line => {
                 sectorLines.add(line);
+            });
+
+            sector.children.forEach(child => {
+                child.lines.forEach(line => {
+                    sectorLines.add(line);
+                });
             });
         });
 
