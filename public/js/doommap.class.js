@@ -1523,10 +1523,6 @@ export default class DoomMap extends EventTarget {
                 const hitX = Math.round(hit.x);
                 const hitY = Math.round(hit.y);
 
-                if (hitX === current.x && hitY === current.y) {
-                    return true;
-                }
-
                 // Was the rounded hit an endpoint?
                 const endpoint = hitX === line.v0.x && hitY === line.v0.y
                     ? line.v0
