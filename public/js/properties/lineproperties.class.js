@@ -3,22 +3,23 @@ import BaseProperties from '../baseproperties.class.js';
 export default class LineProperties extends BaseProperties {
     static {
         this.setup([{
-            key: 'texture_middle_explicit',
-            tooltip: 'Whether texture_middle has been set',
+            key: 'impassable_index',
+            tooltip: 'The local transaction index in which impassable was explicitly set',
+            type: 'integer',
+            default: -1,
+            range: [-1, Number.MAX_SAFE_INTEGER],
+            hidden: true,
+            export: false,
+        }, {
+            key: 'double_sided',
+            tooltip: 'Whether the line was double sided last rebuild',
             type: 'boolean',
             default: false,
             hidden: true,
             export: false,
         }, {
-            key: 'impassable_explicit',
-            tooltip: 'Whether impassable has been set',
-            type: 'boolean',
-            default: false,
-            hidden: true,
-            export: false,
-        }, {
-            key: 'clear_double_sided',
-            tooltip: 'Whether to clear texture_middle and impassable when the wall becomes double-sided',
+            key: 'double_sided_set',
+            tooltip: 'Whether double_sided has been initialized',
             type: 'boolean',
             default: false,
             hidden: true,

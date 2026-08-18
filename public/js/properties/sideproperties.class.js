@@ -3,6 +3,14 @@ import BaseProperties from '../baseproperties.class.js';
 export default class SideProperties extends BaseProperties {
     static {
         this.setup([{
+            key: 'texture_middle_index',
+            tooltip: 'The local transaction index in which the middle texture was explicitly set',
+            type: 'integer',
+            default: -1,
+            range: [-1, Number.MAX_SAFE_INTEGER],
+            hidden: true,
+            export: false,
+        }, {
             key: 'x_offset',
             wadKey: 'xoffset',
             udmfKey: 'offsetx',

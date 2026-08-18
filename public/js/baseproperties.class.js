@@ -335,14 +335,26 @@ export default class BaseProperties {
     }
 
     /**
-     * Serializes the property values as key-value pairs.
+     * Serializes the property values as key-value pairs. Skips non-exportable properties.
      *
      * @returns {Object} The serialized property entries.
      */
     serialize() {
-        return Array.from(this.#values.entries());
-    }
+        const entries = [];
 
+        this.constructor._properties.forEach(property => {
+            if (!property.export) {
+                return;
+            }
+
+            entries.push([
+                property.key,
+                this.#values.get(property.key),
+            ]);
+        });
+
+        return entries;
+    }
     /**
      * Restores known property values from serialized key-value pairs.
      *

@@ -491,6 +491,8 @@ export default class Client extends EventTarget {
             this.#map.beginTransaction();
         }
 
+        this.#map.incrementTransactionIndex();
+
         operations.forEach(operation => {
             const op = operation.op;
             const args = operation.args;

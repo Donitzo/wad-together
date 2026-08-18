@@ -88,6 +88,8 @@ export default class DoomMap extends EventTarget {
 
     /** @type {?DoomMap.Transaction} Active transaction (operations create undo/redos). */
     #transaction = null;
+    /** @type {Number} Local transaction index counter. */
+    #transactionIndex = 0;
 
     /** @type {Map<BaseProperties, Number>} Cached texture scroll X offset during scroll operations. */
     #cachedOffsetX = new Map();
@@ -444,6 +446,12 @@ export default class DoomMap extends EventTarget {
      */
     static createCopyLineOperations(operations, originalLine, x0, y0, x1, y1, flip = false) {
         originalLine.properties.iterate((property, value) => {
+            if (property === 'impassable_index' ||
+                property === 'double_sided' ||
+                property === 'double_sided_set') {
+                return;
+            }
+
             operations.push({
                 op: 'setLineProperty',
                 args: [x0, y0, x1, y1, property, value],
@@ -451,6 +459,10 @@ export default class DoomMap extends EventTarget {
         });
 
         originalLine.frontProperties.iterate((property, value) => {
+            if (property === 'texture_middle_index') {
+                return;
+            }
+
             operations.push({
                 op: 'setSideProperty',
                 args: [x0, y0, x1, y1, !flip, property, value, false],
@@ -781,22 +793,84 @@ export default class DoomMap extends EventTarget {
             this.#addSectorPrimitive(sector);
         });
 
+        // Convert between single sided and double sided lines
         this.#modifiedLines.forEach(l => {
             const hasFront = l.frontSector !== null && !l.frontSector.isVoid;
             const hasBack = l.backSector !== null && !l.backSector.isVoid;
+
             const isDoubleSided = hasFront && hasBack;
-            if (isDoubleSided && l.properties.getValue('clear_double_sided')) {
-                this.setLineProperty(l.v0.x, l.v0.y, l.v1.x, l.v1.y, 'clear_double_sided', false);
 
-                if (!l.properties.getValue('texture_middle_explicit')) {
-                    this.setSideProperty(l.v0.x, l.v0.y, l.v1.x, l.v1.y, true, 'texture_middle', '-');
-                    this.setSideProperty(l.v0.x, l.v0.y, l.v1.x, l.v1.y, false, 'texture_middle', '-');
-                }
+            if (l.properties.getValue('double_sided_set') &&
+                l.properties.getValue('double_sided') !== isDoubleSided) {
+                if (isDoubleSided) {
+                    if (l.frontProperties.getValue('texture_middle_index') !== this.#transactionIndex) {
+                        const oldFrontMiddle = l.frontProperties.getValue('texture_middle');
+                        const oldFrontUpper = l.frontProperties.getValue('texture_upper');
+                        const oldFrontLower = l.frontProperties.getValue('texture_lower');
 
-                if (!l.properties.getValue('impassable_explicit')) {
-                    this.setLineProperty(l.v0.x, l.v0.y, l.v1.x, l.v1.y, 'impassable', false);
+                        this.setSideProperty(l.v0.x, l.v0.y, l.v1.x, l.v1.y, true, 'texture_middle', '-');
+
+                        if (oldFrontUpper === '-' || oldFrontUpper === '') {
+                            this.setSideProperty(l.v0.x, l.v0.y, l.v1.x, l.v1.y, true, 'texture_upper', oldFrontMiddle);
+                        }
+                        if (oldFrontLower === '-' || oldFrontLower === '') {
+                            this.setSideProperty(l.v0.x, l.v0.y, l.v1.x, l.v1.y, true, 'texture_lower', oldFrontMiddle);
+                        }
+                    }
+
+                    if (l.backProperties.getValue('texture_middle_index') !== this.#transactionIndex) {
+                        const oldBackMiddle = l.backProperties.getValue('texture_middle');
+                        const oldBackUpper = l.backProperties.getValue('texture_upper');
+                        const oldBackLower = l.backProperties.getValue('texture_lower');
+
+                        this.setSideProperty(l.v0.x, l.v0.y, l.v1.x, l.v1.y, false, 'texture_middle', '-');
+
+                        if (oldBackUpper === '-' || oldBackUpper === '') {
+                            this.setSideProperty(l.v0.x, l.v0.y, l.v1.x, l.v1.y, false, 'texture_upper', oldBackMiddle);
+                        }
+                        if (oldBackLower === '-' || oldBackLower === '') {
+                            this.setSideProperty(l.v0.x, l.v0.y, l.v1.x, l.v1.y, false, 'texture_lower', oldBackMiddle);
+                        }
+                    }
+
+                    if (l.properties.getValue('impassable_index') !== this.#transactionIndex) {
+                        this.setLineProperty(l.v0.x, l.v0.y, l.v1.x, l.v1.y, 'impassable', false);
+                    }
+                } else {
+                    if (l.frontProperties.getValue('texture_middle_index') !== this.#transactionIndex) {
+                        const oldFrontUpper = l.frontProperties.getValue('texture_upper');
+                        const oldFrontLower = l.frontProperties.getValue('texture_lower');
+                        const oldFrontWall = oldFrontLower !== '-' && oldFrontLower !== ''
+                            ? oldFrontLower
+                            : oldFrontUpper;
+                        const oldFrontMiddle = l.frontProperties.getValue('texture_middle');
+
+                        if (oldFrontMiddle === '-' || oldFrontMiddle === '') {
+                            this.setSideProperty(l.v0.x, l.v0.y, l.v1.x, l.v1.y, true, 'texture_middle', oldFrontWall);
+                        }
+                    }
+
+                    if (l.backProperties.getValue('texture_middle_index') !== this.#transactionIndex) {
+                        const oldBackUpper = l.backProperties.getValue('texture_upper');
+                        const oldBackLower = l.backProperties.getValue('texture_lower');
+                        const oldBackWall = oldBackLower !== '-' && oldBackLower !== ''
+                            ? oldBackLower
+                            : oldBackUpper;
+                        const oldBackMiddle = l.backProperties.getValue('texture_middle');
+
+                        if (oldBackMiddle === '-' || oldBackMiddle === '') {
+                            this.setSideProperty(l.v0.x, l.v0.y, l.v1.x, l.v1.y, false, 'texture_middle', oldBackWall);
+                        }
+                    }
+
+                    if (l.properties.getValue('impassable_index') !== this.#transactionIndex) {
+                        this.setLineProperty(l.v0.x, l.v0.y, l.v1.x, l.v1.y, 'impassable', true);
+                    }
                 }
             }
+
+            l.properties.setValue('double_sided', isDoubleSided);
+            l.properties.setValue('double_sided_set', true);
         });
 
         this.#modifiedLines.clear();
@@ -1251,6 +1325,13 @@ export default class DoomMap extends EventTarget {
         return t;
     }
 
+    /**
+     * Increase the local transaction counter (used to identify operations belonging to the same transaction).
+     */
+    incrementTransactionIndex() {
+        this.#transactionIndex++;
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // Geometry manipulation
 
@@ -1394,12 +1475,10 @@ export default class DoomMap extends EventTarget {
      * @param {?Line} [templateLine=null] - A line whose properties are copied to new segments.
      * @param {boolean} [skipForwardHistory=false] - Whether to omit the apply operation from transaction history.
      * @param {?boolean} [templateFlip=null] - An optional override for template-side flipping.
-     * @param {?boolean} [autoclearTexture=true]
-     *     Whether to automatically clear the middle texture when the line turns double-sided.
      * @param {?Set<string>} [lineage=null] - Descendant line keys.
      */
     addLine(fromX, fromY, toX, toY, templateLine = null, skipForwardHistory = false, templateFlip = null,
-        autoclearTexture = true, lineage = null) {
+        lineage = null) {
         const x0 = Math.round(fromX);
         const y0 = Math.round(fromY);
         const x1 = Math.round(toX);
@@ -1565,7 +1644,7 @@ export default class DoomMap extends EventTarget {
                 next = this.addVertex(nearestVertex.x, nearestVertex.y);
 
                 // Recursively add the new line to account for any new intersections after rounding
-                this.addLine(current.x, current.y, next.x, next.y, templateLine, true, null, true, lineage);
+                this.addLine(current.x, current.y, next.x, next.y, templateLine, true, null, lineage);
             } else {
                 // No line intersection. The new line will not be realigned so we can add it directly
 
@@ -1660,10 +1739,6 @@ export default class DoomMap extends EventTarget {
                             }
                         }
 
-                        if (autoclearTexture) {
-                            line.properties.setValue('clear_double_sided', true);
-                        }
-
                         line.frontProperties.setValue(
                             'x_offset',
                             (((line.frontProperties.getValue('x_offset') + offset) % 512) + 512) % 512
@@ -1673,6 +1748,10 @@ export default class DoomMap extends EventTarget {
                             'x_offset',
                             (((line.backProperties.getValue('x_offset') + offset) % 512) + 512) % 512
                         );
+
+                        line.frontProperties.setValue('texture_middle_index', -1);
+                        line.backProperties.setValue('texture_middle_index', -1);
+                        line.properties.setValue('impassable_index', -1);
                     } else {
                         const parentSector = this.getSector(
                             (current.x + next.x) * 0.5,
@@ -1697,8 +1776,8 @@ export default class DoomMap extends EventTarget {
                 const l2 = nearestLine;
                 const key2 = DoomMap.createLineKey(l2.v0.x, l2.v0.y, l2.v1.x, l2.v1.y);
                 const lineage2 = new Set();
-                this.addLine(l2.v0.x, l2.v0.y, next.x, next.y, templateLine, true, false, true, lineage2);
-                this.addLine(next.x, next.y, l2.v1.x, l2.v1.y, templateLine, true, false, true, lineage2);
+                this.addLine(l2.v0.x, l2.v0.y, next.x, next.y, templateLine, true, false, lineage2);
+                this.addLine(next.x, next.y, l2.v1.x, l2.v1.y, templateLine, true, false, lineage2);
                 if (lineage2.size > 0) {
                     this.#lineLineages.set(key2, lineage2);
                 }
@@ -1789,8 +1868,8 @@ export default class DoomMap extends EventTarget {
 
         this.#removeLinePrimitive(line);
 
-        this.addLine(x0, y0, x, y, line, true, false, false);
-        this.addLine(x, y, x1, y1, line, true, false, false);
+        this.addLine(x0, y0, x, y, line, true, false);
+        this.addLine(x, y, x1, y1, line, true, false);
 
         if (this.#transaction !== null) {
             this.#transaction.applyOperations.push({
@@ -3362,8 +3441,8 @@ export default class DoomMap extends EventTarget {
 
             const sideProperties = isFront ? line.frontProperties : line.backProperties;
 
-            if (property === 'texture_middle') {
-                line.properties.setValue('texture_middle_explicit', true);
+            if (property === 'texture_middle' && value !== '-' && value !== '') {
+                sideProperties.setValue('texture_middle_index', this.#transactionIndex);
             }
 
             const last = sideProperties.getValue(property);
@@ -3419,8 +3498,8 @@ export default class DoomMap extends EventTarget {
                 return;
             }
 
-            if (property === 'impassable') {
-                line.properties.setValue('impassable_explicit', true);
+            if (property === 'impassable' && !!value) {
+                line.properties.setValue('impassable_index', this.#transactionIndex);
             }
 
             const last = line.properties.getValue(property);
@@ -4080,7 +4159,7 @@ export default class DoomMap extends EventTarget {
             const x1 = Math.round(v1.x);
             const y1 = Math.round(v1.y);
 
-            this.addLine(x0, y0, x1, y1, null, false, null, false);
+            this.addLine(x0, y0, x1, y1, null, false, null);
 
             const line = this.getLine(x0, y0, x1, y1);
             if (line === null) {
@@ -4128,12 +4207,10 @@ export default class DoomMap extends EventTarget {
                 if (side.line.frontSector !== null) {
                     side.line.frontSectorProperties.setValue('is_void', true);
                     side.line.frontSector.properties.setValue('is_void', true);
-                    side.line.properties.setValue('clear_double_sided', true);
                 }
             } else if (side.line.backSector !== null) {
                 side.line.backSectorProperties.setValue('is_void', true);
                 side.line.backSector.properties.setValue('is_void', true);
-                side.line.properties.setValue('clear_double_sided', true);
             }
 
         });
