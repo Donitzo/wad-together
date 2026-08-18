@@ -795,6 +795,10 @@ export default class DoomMap extends EventTarget {
 
         // Convert between single sided and double sided lines
         this.#modifiedLines.forEach(l => {
+            if (!this.#lines.has(l)) {
+                return;
+            }
+
             const hasFront = l.frontSector !== null && !l.frontSector.isVoid;
             const hasBack = l.backSector !== null && !l.backSector.isVoid;
 
