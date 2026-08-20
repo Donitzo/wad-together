@@ -637,7 +637,7 @@ export default class Interface {
                                     );
 
                                     operations.push({
-                                        op: 'setLineSectorPropertyBySide',
+                                        op: 'setSectorPropertyBySide',
                                         args: [
                                             v0.x,
                                             v0.y,
@@ -658,7 +658,7 @@ export default class Interface {
                                     );
 
                                     operations.push({
-                                        op: 'setLineSectorPropertyBySide',
+                                        op: 'setSectorPropertyBySide',
                                         args: [
                                             v0.x,
                                             v0.y,
