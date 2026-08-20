@@ -571,8 +571,8 @@ export default class Interface {
                                 });
 
                                 movedVertices.set(geometry, {
-                                    x: geometry.x + Math.floor(Math.random() * 3) - 1,
-                                    y: geometry.y + Math.floor(Math.random() * 3) - 1,
+                                    x: geometry.x + (Math.floor(Math.random() * 3) - 1) * 2,
+                                    y: geometry.y + (Math.floor(Math.random() * 3) - 1) * 2,
                                 });
 
                                 geometry.lines.forEach(line => {
@@ -637,7 +637,7 @@ export default class Interface {
                                     );
 
                                     operations.push({
-                                        op: 'setSectorPropertyBySide',
+                                        op: 'setLineSectorPropertyBySide',
                                         args: [
                                             v0.x,
                                             v0.y,
@@ -658,7 +658,7 @@ export default class Interface {
                                     );
 
                                     operations.push({
-                                        op: 'setSectorPropertyBySide',
+                                        op: 'setLineSectorPropertyBySide',
                                         args: [
                                             v0.x,
                                             v0.y,
