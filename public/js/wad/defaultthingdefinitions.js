@@ -79,7 +79,7 @@ const definitions = [
     { id: 20,   name: 'Dead imp',                     sprite: 'TROO', frame: 'M', category: 'Decoration' },
     { id: 21,   name: 'Dead demon',                   sprite: 'SARG', frame: 'N', category: 'Decoration' },
     { id: 22,   name: 'Dead cacodemon',               sprite: 'HEAD', frame: 'L', category: 'Decoration' },
-    { id: 23,   name: 'Dead lost soul (invisible)',   sprite: 'SKUL', frame: 'L', category: 'Decoration' },
+    { id: 23,   name: 'Dead lost soul (invisible)',   sprite: 'SKUL', category: 'Decoration' },
     { id: 24,   name: 'Pool of blood and flesh',      sprite: 'POL5', category: 'Decoration' },
     { id: 25,   name: 'Impaled human',                sprite: 'POL1', category: 'Decoration' },
     { id: 26,   name: 'Twitching impaled human',      sprite: 'POL6', category: 'Decoration' },
