@@ -142,6 +142,7 @@ input {
 .property-table {
     border-collapse: collapse;
     font-size: 11px;
+    user-select: text;
     width: 100%;
 }
 
