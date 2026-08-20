@@ -549,6 +549,127 @@ export default class Interface {
                     }
                     break;
 
+                case 'k':
+                    if (!e.ctrlKey && !e.shiftKey) {
+                        // QUAKE
+                        const geometries = this.#doomMap.getSelection();
+
+                        const operations = [];
+
+                        const movedVertices = new Map();
+                        const movedLines = new Set();
+
+                        geometries.forEach(geometry => {
+                            if (geometry instanceof Vertex) {
+                                operations.push({
+                                    op: 'removeVertex',
+                                    args: [
+                                        geometry.x,
+                                        geometry.y,
+                                    ],
+                                });
+
+                                movedVertices.set(geometry, {
+                                    x: geometry.x + Math.floor(Math.random() * 3) - 1,
+                                    y: geometry.y + Math.floor(Math.random() * 3) - 1,
+                                });
+
+                                geometry.lines.forEach(line =>
+                                    movedLines.add(line);
+                                });
+                            }
+                        });
+
+                        geometries.forEach(geometry => {
+                            if (geometry instanceof Vertex) {
+                                const moved = movedVertices.get(geometry);
+
+                                operations.push({
+                                    op: 'createVertex',
+                                    args: [
+                                        moved.x,
+                                        moved.y,
+                                    ],
+                                });
+                            }
+                        });
+
+                        movedLines.forEach(line => {
+                            const v0 = movedVertices.get(line.v0) ?? line.v0;
+                            const v1 = movedVertices.get(line.v1) ?? line.v1;
+
+                            DoomMap.createCopyLineOperations(
+                                operations,
+                                line,
+                                v0.x,
+                                v0.y,
+                                v1.x,
+                                v1.y
+                            );
+                        });
+
+                        geometries.forEach(geometry => {
+                            if (geometry instanceof Sector) {
+                                const line = geometry.lines[0];
+                                const v0 = movedVertices.get(line.v0) ?? line.v0;
+                                const v1 = movedVertices.get(line.v1) ?? line.v1;
+                                const isFront = line.frontSector === geometry;
+
+                                let floorHeight = geometry.properties.getValue('floor_height');
+                                let ceilingHeight = geometry.properties.getValue('ceiling_height');
+
+                                if (this.#doomMap.isSelected(geometry, null, null, null, null, true)) {
+                                    floorHeight = Math.max(-32768,
+                                        Math.min(ceilingHeight,
+                                            floorHeight + (Math.floor(Math.random() * 3) - 1) * 8
+                                        )
+                                    );
+
+                                    operations.push({
+                                        op: 'setSectorPropertyBySide',
+                                        args: [
+                                            v0.x,
+                                            v0.y,
+                                            v1.x,
+                                            v1.y,
+                                            isFront,
+                                            'floor_height',
+                                            floorHeight,
+                                        ],
+                                    });
+                                }
+
+                                if (this.#doomMap.isSelected(geometry, null, null, true)) {
+                                    ceilingHeight = Math.max(floorHeight,
+                                        Math.min(32767,
+                                            ceilingHeight + (Math.floor(Math.random() * 3) - 1) * 8
+                                        )
+                                    );
+
+                                    operations.push({
+                                        op: 'setSectorPropertyBySide',
+                                        args: [
+                                            v0.x,
+                                            v0.y,
+                                            v1.x,
+                                            v1.y,
+                                            isFront,
+                                            'ceiling_height',
+                                            ceilingHeight,
+                                        ],
+                                    });
+                                }
+                            }
+                        });
+
+                        if (operations.length > 0) {
+                            this.#client.sendTransaction(operations);
+                        }
+
+                        e.preventDefault();
+                    }
+                    break;
+
                 case 'r':
                     if (!e.ctrlKey && !e.shiftKey) {
                         // Rotate mode
