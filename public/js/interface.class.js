@@ -4,6 +4,7 @@ import DoomMaterial from './doommaterial.class.js';
 import Line from './geometries/line.class.js';
 import Sector from './geometries/sector.class.js';
 import Thing from './geometries/thing.class.js';
+import Vertex from './geometries/vertex.class.js';
 import { io } from './lib/socket.io.esm.min.js';
 import MapTransformer from './wad/maptransformer.class.js';
 import ResourceUtility from './wad/resourceutility.class.js';
