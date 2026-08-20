@@ -574,7 +574,7 @@ export default class Interface {
                                     y: geometry.y + Math.floor(Math.random() * 3) - 1,
                                 });
 
-                                geometry.lines.forEach(line =>
+                                geometry.lines.forEach(line => {
                                     movedLines.add(line);
                                 });
                             }
