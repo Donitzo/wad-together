@@ -630,7 +630,7 @@ export default class Interface {
                                 if (changeFloorHeight) {
                                     floorHeight = Math.max(-32768,
                                         Math.min(ceilingHeight,
-                                            floorHeight + (Math.floor(Math.random() * 3) - 1) * 12
+                                            floorHeight + (Math.floor(Math.random() * 3) - 1) * 8
                                         )
                                     );
                                 }
@@ -638,7 +638,7 @@ export default class Interface {
                                 if (changeCeilingHeight) {
                                     ceilingHeight = Math.max(floorHeight,
                                         Math.min(32767,
-                                            ceilingHeight + (Math.floor(Math.random() * 3) - 1) * 12
+                                            ceilingHeight + (Math.floor(Math.random() * 3) - 1) * 8
                                         )
                                     );
                                 }
