@@ -91,10 +91,14 @@ export default class Input {
 
         container.addEventListener('touchstart', e => {
             Input.#lastTouches = Array.from(e.touches);
+            
+            e.preventDefault();
         }, { passive: false });
 
         document.addEventListener('touchend', e => {
             Input.#lastTouches = Array.from(e.touches);
+            
+            e.preventDefault();
         }, { passive: false });
 
         document.addEventListener('touchcancel', e => {
