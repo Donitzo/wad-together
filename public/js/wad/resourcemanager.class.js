@@ -443,15 +443,17 @@ export default class ResourceManager {
         }
 
         this.#thingDefinitions.forEach(definition => {
+            const frame = definition.frame ?? 'A';
+
             const rotations = [
-                { pattern: /^A1(?:[A-Z]1)?$/, flip: false },
-                { pattern: /^A2(?:[A-Z]8)?$/, flip: false },
-                { pattern: /^A3(?:[A-Z]7)?$/, flip: false },
-                { pattern: /^A4(?:[A-Z]6)?$/, flip: false },
-                { pattern: /^A5(?:[A-Z]5)?$/, flip: false },
-                { pattern: /^A4(?:[A-Z]6)?$/, flip: true },
-                { pattern: /^A3(?:[A-Z]7)?$/, flip: true },
-                { pattern: /^A2(?:[A-Z]8)?$/, flip: true },
+                { pattern: new RegExp(`^${frame}1(?:[A-Z]1)?$`), flip: false },
+                { pattern: new RegExp(`^${frame}2(?:[A-Z]8)?$`), flip: false },
+                { pattern: new RegExp(`^${frame}3(?:[A-Z]7)?$`), flip: false },
+                { pattern: new RegExp(`^${frame}4(?:[A-Z]6)?$`), flip: false },
+                { pattern: new RegExp(`^${frame}5(?:[A-Z]5)?$`), flip: false },
+                { pattern: new RegExp(`^${frame}4(?:[A-Z]6)?$`), flip: true },
+                { pattern: new RegExp(`^${frame}3(?:[A-Z]7)?$`), flip: true },
+                { pattern: new RegExp(`^${frame}2(?:[A-Z]8)?$`), flip: true },
             ];
 
             let firstImage = null;
@@ -462,7 +464,7 @@ export default class ResourceManager {
                 }
 
                 const suffix = name.slice(definition.sprite.length);
-                return /^[A-Z]0$/.test(suffix);
+                return suffix === `${frame}0`;
             });
 
             if (rotationless !== undefined) {
