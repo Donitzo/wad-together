@@ -946,7 +946,7 @@ export default class Editor3D {
                         const heights2 = this.#getCachedSectorHeights(sector2);
                         const line2 = sector2.lines[0];
                         const newHeight2 = Math.max(isLower ? -32768 : heights2.floor,
-                            Math.min(isLower ? heights2.ceiling : 32768,
+                            Math.min(isLower ? heights2.ceiling : 32767,
                                 (isLower ? heights2.floor
                                 : heights2.ceiling) + delta
                             )
