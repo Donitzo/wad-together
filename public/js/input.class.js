@@ -95,10 +95,12 @@ export default class Input {
 
         document.addEventListener('touchend', e => {
             Input.#lastTouches = Array.from(e.touches);
-            
-            e.preventDefault();
         }, { passive: false });
 
+        document.querySelector('.editor').addEventListener('selectstart', e => {
+            e.preventDefault();
+        });
+        
         document.addEventListener('touchcancel', e => {
             Input.#lastTouches = Array.from(e.touches);
         }, { passive: false });
