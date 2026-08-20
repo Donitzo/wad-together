@@ -586,7 +586,7 @@ export default class Interface {
                                 const moved = movedVertices.get(geometry);
 
                                 operations.push({
-                                    op: 'createVertex',
+                                    op: 'addVertex',
                                     args: [
                                         moved.x,
                                         moved.y,
