@@ -2785,7 +2785,7 @@ export default class VectorEditor {
                     const dx = this.#modeLineEnd.x - this.#modeLineStart.x;
                     const dy = this.#modeLineEnd.y - this.#modeLineStart.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
-                    const angle = 90 - Math.atan2(dy, dx) * 180 / Math.PI;
+                    const angle = (90 - Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
                     const is45Step = Math.abs(angle - Math.round(angle / 45) * 45) < 1e-6;
 
                     if (is45Step) {
@@ -2934,10 +2934,11 @@ export default class VectorEditor {
                     );
                     const ellipse = String.fromCodePoint(0x2B2D);
                     const arc = String.fromCodePoint(0x2312);
-                    const angleChar = String.fromCodePoint(0x2220)
+                    const angleChar = String.fromCodePoint(0x2220);
+                    const startAngle = (-Math.round(this.#modeEllipseStartAngle * 180 / Math.PI) - 90 + 360) % 360;
                     ctx.fillText(
                         `${ellipse}${this.#modeEllipseVertices}${isSlice && this.#subMode === 2 ? ' ' + arc + this.#modeEllipseEndVertex : ''}` +
-                        `${this.#subMode === 2 ? ' ' + angleChar + (-Math.round(this.#modeEllipseStartAngle * 180 / Math.PI) - 90) : ''}`,
+                        `${this.#subMode === 2 ? ' ' + angleChar + startAngle : ''}`,
                         sx - 12,
                         sy + 4
                     );
