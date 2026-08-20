@@ -97,7 +97,11 @@ export default class Input {
             Input.#lastTouches = Array.from(e.touches);
         }, { passive: false });
 
-        document.querySelector('.editor').addEventListener('selectstart', e => {
+        const editor = document.querySelector('.editor');
+        editor.addEventListener('selectstart', e => {
+            e.preventDefault();
+        });
+        editor.addEventListener('selectend', e => {
             e.preventDefault();
         });
         
