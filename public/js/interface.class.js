@@ -599,6 +599,16 @@ export default class Interface {
                             const v0 = movedVertices.get(line.v0) ?? line.v0;
                             const v1 = movedVertices.get(line.v1) ?? line.v1;
 
+                            operations.push({
+                                op: 'addLine',
+                                args: [
+                                    v0.x,
+                                    v0.y,
+                                    v1.x,
+                                    v1.y,
+                                ],
+                            });
+                            
                             DoomMap.createCopyLineOperations(
                                 operations,
                                 line,
