@@ -541,16 +541,13 @@ input {
 .panel-sounds {
 }
 
-.editor__fullscreen,
-.editor__inset {
-    touch-action: none;
-}
-
 .editor {
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
     position: relative;
+    touch-action: none;
+    user-select: none;
 }
 
     .editor__fullscreen {
