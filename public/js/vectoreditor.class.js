@@ -2785,7 +2785,7 @@ export default class VectorEditor {
                     const dx = this.#modeLineEnd.x - this.#modeLineStart.x;
                     const dy = this.#modeLineEnd.y - this.#modeLineStart.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
-                    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+                    const angle = 90 - Math.atan2(dy, dx) * 180 / Math.PI;
                     const is45Step = Math.abs(angle - Math.round(angle / 45) * 45) < 1e-6;
 
                     if (is45Step) {
