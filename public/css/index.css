@@ -27,6 +27,16 @@
 
 * {
     box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+input,
+textarea,
+.property-table,
+.property-table * {
+    user-select: text;
+    -webkit-user-select: text;
 }
 
 html,
@@ -41,14 +51,6 @@ body {
     color: var(--text-primary);
     font: 13px Tahoma, Verdana, sans-serif;
     margin: 0;
-    user-select: none;
-    -webkit-user-select: none;
-}
-
-input,
-textarea {
-    user-select: text;
-    -webkit-user-select: text;
 }
 
 label {
