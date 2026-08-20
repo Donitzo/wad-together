@@ -571,8 +571,8 @@ export default class Interface {
                                 });
 
                                 movedVertices.set(geometry, {
-                                    x: geometry.x + (Math.floor(Math.random() * 3) - 1) * 2,
-                                    y: geometry.y + (Math.floor(Math.random() * 3) - 1) * 2,
+                                    x: geometry.x + (Math.floor(Math.random() * 3) - 1) * 4,
+                                    y: geometry.y + (Math.floor(Math.random() * 3) - 1) * 4,
                                 });
 
                                 geometry.lines.forEach(line => {
@@ -621,55 +621,63 @@ export default class Interface {
 
                         geometries.forEach(geometry => {
                             if (geometry instanceof Sector) {
-                                const line = geometry.lines[0];
-                                const v0 = movedVertices.get(line.v0) ?? line.v0;
-                                const v1 = movedVertices.get(line.v1) ?? line.v1;
-                                const isFront = line.frontSector === geometry;
-
                                 let floorHeight = geometry.properties.getValue('floor_height');
                                 let ceilingHeight = geometry.properties.getValue('ceiling_height');
+                                
+                                const changeFloorHeight = this.#doomMap.isSelected(geometry, null, null, null, null, true);
+                                const changeCeilingHeight = this.#doomMap.isSelected(geometry, null, null, true);
 
-                                if (this.#doomMap.isSelected(geometry, null, null, null, null, true)) {
+                                if (changeFloorHeight) {
                                     floorHeight = Math.max(-32768,
                                         Math.min(ceilingHeight,
-                                            floorHeight + (Math.floor(Math.random() * 3) - 1) * 8
+                                            floorHeight + (Math.floor(Math.random() * 3) - 1) * 12
                                         )
                                     );
-
-                                    operations.push({
-                                        op: 'setSectorPropertyBySide',
-                                        args: [
-                                            v0.x,
-                                            v0.y,
-                                            v1.x,
-                                            v1.y,
-                                            isFront,
-                                            'floor_height',
-                                            floorHeight,
-                                        ],
-                                    });
                                 }
 
-                                if (this.#doomMap.isSelected(geometry, null, null, true)) {
+                                if (changeCeilingHeight) {
                                     ceilingHeight = Math.max(floorHeight,
                                         Math.min(32767,
-                                            ceilingHeight + (Math.floor(Math.random() * 3) - 1) * 8
+                                            ceilingHeight + (Math.floor(Math.random() * 3) - 1) * 12
                                         )
                                     );
-
-                                    operations.push({
-                                        op: 'setSectorPropertyBySide',
-                                        args: [
-                                            v0.x,
-                                            v0.y,
-                                            v1.x,
-                                            v1.y,
-                                            isFront,
-                                            'ceiling_height',
-                                            ceilingHeight,
-                                        ],
-                                    });
                                 }
+
+                                geometry.lines.forEach(line => {
+                                    const v0 = movedVertices.get(line.v0) ?? line.v0;
+                                    const v1 = movedVertices.get(line.v1) ?? line.v1;
+                                    const isFront = line.frontSector === geometry;
+    
+                                    if (changeFloorHeight) {
+                                        operations.push({
+                                            op: 'setLineSectorPropertyBySide',
+                                            args: [
+                                                v0.x,
+                                                v0.y,
+                                                v1.x,
+                                                v1.y,
+                                                isFront,
+                                                'floor_height',
+                                                floorHeight,
+                                            ],
+                                        });
+                                    }
+    
+                                    if (changeCeilingHeight) {
+                                        operations.push({
+                                            op: 'setLineSectorPropertyBySide',
+                                            args: [
+                                                v0.x,
+                                                v0.y,
+                                                v1.x,
+                                                v1.y,
+                                                isFront,
+                                                'ceiling_height',
+                                                ceilingHeight,
+                                            ],
+                                        });
+                                    }
+                                });
                             }
                         });
 
