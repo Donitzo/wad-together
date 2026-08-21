@@ -3753,8 +3753,9 @@ export default class VectorEditor {
      * Applies a wall texture to selected line surfaces.
      *
      * @param {string} name - Texture name.
+     * @param {boolean} assignMiddle - Whether to explicitly assign the middle texture.
      */
-    setTextureName(name) {
+    setTextureName(name, assignMiddle = false) {
         const operations = [];
 
         this.#map.iterateLines(line => {
@@ -3779,9 +3780,9 @@ export default class VectorEditor {
                 const frontSelected = side.isFront ? true : null;
                 const backSelected = side.isFront ? null : true;
 
-                const isUpper = this.#map.isSelected(line, frontSelected, backSelected, true);
-                const isMiddle = this.#map.isSelected(line, frontSelected, backSelected, null, true);
-                const isLower = this.#map.isSelected(line, frontSelected, backSelected, null, null, true);
+                const isUpper = this.#map.isSelected(line, frontSelected, backSelected, true) && !assignMiddle;
+                const isMiddle = this.#map.isSelected(line, frontSelected, backSelected, null, true) || assignMiddle;
+                const isLower = this.#map.isSelected(line, frontSelected, backSelected, null, null, true) && !assignMiddle;
 
                 const middleTexture = side.properties.getValue('texture_middle');
 
