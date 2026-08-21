@@ -569,7 +569,7 @@ export default class DoomMap extends EventTarget {
 
         for (const line of this.#modifiedLines) {
             if (!this.#lines.has(line)) {
-                return;
+                continue;
             }
             
             if (line.frontSector === null) {
