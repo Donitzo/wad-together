@@ -568,6 +568,10 @@ export default class DoomMap extends EventTarget {
         const edges = [];
 
         for (const line of this.#modifiedLines) {
+            if (!this.#lines.has(line)) {
+                return;
+            }
+            
             if (line.frontSector === null) {
                 edges.push({
                     from: line.v0,
