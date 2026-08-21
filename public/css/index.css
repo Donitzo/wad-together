@@ -34,7 +34,9 @@
 input,
 textarea,
 .property-table,
-.property-table * {
+.property-table *,
+.gallery,
+.gallery * {
     user-select: text;
     -webkit-user-select: text;
 }
