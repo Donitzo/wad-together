@@ -1116,6 +1116,15 @@ export default class Interface {
             }
         });
 
+        this.#elements.containerTextures.addEventListener('contextmenu', e => {
+            const item = e.target.closest('.gallery__item');
+            if (item) {
+                selectGalleryItem(this.#elements.containerTextures, item, selected => {
+                    vectorEditor.setTextureName(selected.dataset.name, true);
+                });
+            }
+        });
+
         this.#elements.containerFlats.addEventListener('click', e => {
             const item = e.target.closest('.gallery__item');
             if (item) {
