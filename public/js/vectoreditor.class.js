@@ -3794,7 +3794,7 @@ export default class VectorEditor {
                                 line.v1.x, line.v1.y,
                                 side.isFront,
                                 'texture_middle',
-                                name,
+                                middleTexture === name && assignMiddle ? '-' : name,
                                 false,
                             ],
                         });
