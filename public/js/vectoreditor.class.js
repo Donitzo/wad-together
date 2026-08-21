@@ -3760,13 +3760,13 @@ export default class VectorEditor {
 
         this.#map.iterateLines(line => {
             [{
-                selected: this.#map.isSelected(line, true),
+                selected: this.#map.isSelected(line, true) || assignMiddle,
                 isFront: true,
                 sector: line.frontSector,
                 otherSector: line.backSector,
                 properties: line.frontProperties,
             }, {
-                selected: this.#map.isSelected(line, null, true),
+                selected: this.#map.isSelected(line, null, true) || assignMiddle,
                 isFront: false,
                 sector: line.backSector,
                 otherSector: line.frontSector,
@@ -3775,7 +3775,6 @@ export default class VectorEditor {
                 if (!side.selected || side.sector === null) {
                     return;
                 }
-
 
                 const frontSelected = side.isFront ? true : null;
                 const backSelected = side.isFront ? null : true;
@@ -3786,7 +3785,7 @@ export default class VectorEditor {
 
                 const middleTexture = side.properties.getValue('texture_middle');
 
-                if (side.otherSector === null || side.otherSector.isVoid) {
+                if (side.otherSector === null || side.otherSector.isVoid || assignMiddle) {
                     if (isMiddle) {
                         operations.push({
                             op: 'setSideProperty',
