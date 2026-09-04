@@ -8,7 +8,6 @@ export default class SectorProperties extends BaseProperties {
             tooltip: 'Whether to treat this sector as a void (not exported)',
             type: 'boolean',
             default: false,
-            export: false,
         }, {
             key: 'floor_height',
             wadKey: 'heightfloor',
