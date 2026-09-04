@@ -608,7 +608,7 @@ export default class Interface {
                                     v1.y,
                                 ],
                             });
-                            
+
                             DoomMap.createCopyLineOperations(
                                 operations,
                                 line,
@@ -623,7 +623,7 @@ export default class Interface {
                             if (geometry instanceof Sector) {
                                 let floorHeight = geometry.properties.getValue('floor_height');
                                 let ceilingHeight = geometry.properties.getValue('ceiling_height');
-                                
+
                                 const changeFloorHeight = this.#doomMap.isSelected(geometry, null, null, null, null, true);
                                 const changeCeilingHeight = this.#doomMap.isSelected(geometry, null, null, true);
 
@@ -647,7 +647,7 @@ export default class Interface {
                                     const v0 = movedVertices.get(line.v0) ?? line.v0;
                                     const v1 = movedVertices.get(line.v1) ?? line.v1;
                                     const isFront = line.frontSector === geometry;
-    
+
                                     if (changeFloorHeight) {
                                         operations.push({
                                             op: 'setLineSectorPropertyBySide',
@@ -662,7 +662,7 @@ export default class Interface {
                                             ],
                                         });
                                     }
-    
+
                                     if (changeCeilingHeight) {
                                         operations.push({
                                             op: 'setLineSectorPropertyBySide',
@@ -1257,13 +1257,30 @@ export default class Interface {
         const refreshResources = async () => {
             await this.#resourceManager.refreshResources();
 
+            const textures = new Map(this.#resourceManager.textures);
+            const flats = new Map(this.#resourceManager.flats);
+
+            if (this.#doomMap.metadata.hasMixedTexturesFlats) {
+                this.#resourceManager.flats.forEach((flat, name) => {
+                    if (!textures.has(name)) {
+                        textures.set(name, flat);
+                    }
+                });
+
+                this.#resourceManager.textures.forEach((texture, name) => {
+                    if (!flats.has(name)) {
+                        flats.set(name, texture);
+                    }
+                });
+            }
+
             const rows = document.querySelectorAll('.panel-wad .property-table tr td:nth-child(2)');
             rows[0].textContent = this.#resourceManager.lumpManager.sources.map(source => source.name).join('\n');
             rows[0].style.whiteSpace = 'pre-line';
             rows[1].textContent = this.#resourceManager.lumpManager.lumps.length;
             rows[2].textContent = this.#resourceManager.mapNames.length;
-            rows[3].textContent = this.#resourceManager.textures.size;
-            rows[4].textContent = this.#resourceManager.flats.size;
+            rows[3].textContent = textures.size;
+            rows[4].textContent = flats.size;
             rows[5].textContent = this.#resourceManager.thingDefinitions.length;
 
             while (mapSelect.firstChild) {
@@ -1300,7 +1317,7 @@ export default class Interface {
             const palette = this.#resourceManager.palettes[0];
 
             let first = true;
-            this.#resourceManager.textures.forEach((texture, name) => {
+            textures.forEach((texture, name) => {
                 const maskData = ResourceUtility.indexedImageToIndexMaskData(texture);
                 map3d.addTexture(maskData, 'texture', name);
 
@@ -1311,7 +1328,7 @@ export default class Interface {
             });
 
             first = true;
-            this.#resourceManager.flats.forEach((flat, name) => {
+            flats.forEach((flat, name) => {
                 const maskData = ResourceUtility.indexedImageToIndexMaskData(flat);
                 map3d.addTexture(maskData, 'flat', name);
 
@@ -1353,6 +1370,12 @@ export default class Interface {
 
             client.requestMap();
         };
+
+        this.#doomMap.addEventListener('metadatachanged', e => {
+            if (e.detail.property === 'port') {
+                refreshResources();
+            }
+        });
 
         const setBusy = busy => {
             const app = document.querySelector('.app');

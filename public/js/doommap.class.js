@@ -4104,7 +4104,8 @@ export default class DoomMap extends EventTarget {
             const missingMiddle =
                 properties.texturemiddle === '' ||
                 properties.texturemiddle === '-' ||
-                !resourceManager.textures.has(properties.texturemiddle);
+                !resourceManager.textures.has(properties.texturemiddle) &&
+                !(this.#metadata.hasMixedTexturesFlats && resourceManager.flats.has(properties.texturemiddle));
 
             if (isOuterFacing && missingMiddle && fallbackTexture !== undefined) {
                 properties.texturemiddle = fallbackTexture;

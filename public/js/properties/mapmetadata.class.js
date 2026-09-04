@@ -206,4 +206,10 @@ export default class MapMetadata extends BaseProperties {
         const port = this.getValue('port');
         return port === 'zdoom_udmf' || port === 'gzdoom_udmf';
     }
+
+    get hasMixedTexturesFlats() {
+        const port = this.getValue('port');
+        return port === 'zdoom_doom_wad' || port === 'zdoom_hexen_wad' || port === 'zdoom_udmf' ||
+            port === 'gzdoom_doom_wad' || port === 'gzdoom_hexen_wad' || port === 'gzdoom_udmf';
+    }
 }
