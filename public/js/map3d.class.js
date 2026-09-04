@@ -1131,32 +1131,44 @@ export default class Map3D {
                     }
 
                     const height = texture.image.height / Math.abs(yScale);
-                    const clampedHeight = Math.min(middleTop - middleBottom, height);
 
-                    const clampedBottom = line.properties.getValue('lower_unpegged') ?
-                        middleBottom : middleTop - clampedHeight;
-                    const clampedTop = !line.properties.getValue('lower_unpegged') ?
-                        middleTop : clampedBottom + clampedHeight;
+                    let yOffset = middleSideProperties.getValue('y_offset') +
+                        segmentWise * middleSideProperties.getValue('y_offset_middle');
 
-                    const xOffset = (middleSideProperties.getValue('x_offset') +
-                        segmentWise * middleSideProperties.getValue('x_offset_middle')) / xScale;
-                    const yOffset = -(middleSideProperties.getValue('y_offset') +
-                        segmentWise * middleSideProperties.getValue('y_offset_middle')) / yScale +
-                        (height - (clampedTop - clampedBottom)) * !line.properties.getValue('lower_unpegged');
+                    let textureBottom;
+                    let textureTop;
 
-                    result.push(this.#createWallMesh(
-                        line,
-                        isFront,
-                        'middle',
-                        clampedBottom,
-                        clampedTop,
-                        xOffset,
-                        yOffset,
-                        xScale,
-                        yScale,
-                        texture,
-                        false
-                    ));
+                    if (line.properties.getValue('lower_unpegged')) {
+                        textureBottom = middleBottom + yOffset;
+                        textureTop = textureBottom + height;
+                    } else {
+                        textureTop = middleTop + yOffset;
+                        textureBottom = textureTop - height;
+                    }
+
+                    const clampedBottom = Math.max(textureBottom, middleBottom);
+                    const clampedTop = Math.min(textureTop, middleTop);
+
+                    if (clampedBottom < clampedTop) {
+                        const xOffset = (middleSideProperties.getValue('x_offset') +
+                            segmentWise * middleSideProperties.getValue('x_offset_middle')) / xScale;
+
+                        yOffset = clampedBottom - textureBottom;
+
+                        result.push(this.#createWallMesh(
+                            line,
+                            isFront,
+                            'middle',
+                            clampedBottom,
+                            clampedTop,
+                            xOffset,
+                            yOffset,
+                            xScale,
+                            yScale,
+                            texture,
+                            false
+                        ));
+                    }
                 }
             }
         }
