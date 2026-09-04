@@ -571,7 +571,7 @@ export default class DoomMap extends EventTarget {
             if (!this.#lines.has(line)) {
                 continue;
             }
-            
+
             if (line.frontSector === null) {
                 edges.push({
                     from: line.v0,
@@ -3317,11 +3317,78 @@ export default class DoomMap extends EventTarget {
                 return;
             }
 
-            if (this.#selectedFront.has(geometry)) {
-                const offsetX = ((this.#cachedOffsetX.get(geometry.frontProperties)
-                    ?? geometry.frontProperties.getValue('x_offset')) + dx + textureSize) % textureSize;
+            for (let i = 0; i < 2; i++) {
+                const isFront = i === 0;
 
-                this.#cachedOffsetX.set(geometry.frontProperties, offsetX);
+                if (isFront && !this.#selectedFront.has(geometry) ||
+                    !isFront && !this.#selectedBack.has(geometry)) {
+                    continue;
+                }
+
+                const properties = isFront ? geometry.frontProperties : geometry.backProperties;
+
+                const sector = isFront ? geometry.frontSector : geometry.backSector;
+                const otherSector = isFront ? geometry.backSector : geometry.frontSector;
+
+                if (sector === null || sector.isVoid) {
+                    continue;
+                }
+
+                const twoSided = otherSector !== null && !otherSector.isVoid;
+
+                const floorHeight = sector.properties.getValue('floor_height');
+                const ceilingHeight = sector.properties.getValue('ceiling_height');
+
+                const otherFloorHeight = twoSided ? otherSector.properties.getValue('floor_height') : 0;
+                const otherCeilingHeight = twoSided ? otherSector.properties.getValue('ceiling_height') : 0;
+
+                const upperVisible = twoSided && ceilingHeight > otherCeilingHeight;
+                const middleTexture = properties.getValue('texture_middle');
+                const middleVisible = !twoSided || middleTexture !== '-' && middleTexture !== '';
+                const lowerVisible = twoSided && floorHeight < otherFloorHeight;
+
+                const upperSelected = this.#selectedUpper.has(geometry) && upperVisible;
+                const middleSelected = this.#selectedMiddle.has(geometry) && middleVisible;
+                const lowerSelected = this.#selectedLower.has(geometry) && lowerVisible;
+
+                if (!upperSelected && !middleSelected && !lowerSelected) {
+                    continue;
+                }
+
+                let xOffsetKey = 'x_offset';
+                let yOffsetKey = 'y_offset';
+
+                if (this.#metadata.hasSegmentedTextureScrolling) {
+                    if (upperSelected + middleSelected + lowerSelected === 1) {
+                        if (upperSelected) {
+                            xOffsetKey = 'x_offset_upper';
+                            yOffsetKey = 'y_offset_upper';
+                        } else if (middleSelected) {
+                            xOffsetKey = 'x_offset_middle';
+                            yOffsetKey = 'y_offset_middle';
+                        } else {
+                            xOffsetKey = 'x_offset_lower';
+                            yOffsetKey = 'y_offset_lower';
+                        }
+                    }
+                }
+
+                let cachedX = this.#cachedOffsetX.get(properties);
+                if (cachedX === undefined) {
+                    cachedX = new Map();
+                    this.#cachedOffsetX.set(properties, cachedX);
+                }
+
+                let cachedY = this.#cachedOffsetY.get(properties);
+                if (cachedY === undefined) {
+                    cachedY = new Map();
+                    this.#cachedOffsetY.set(properties, cachedY);
+                }
+
+                const newOffsetX = ((cachedX.get(xOffsetKey) ??
+                    properties.getValue(xOffsetKey)) + dx + textureSize) % textureSize;
+
+                cachedX.set(xOffsetKey, newOffsetX);
 
                 operations.push({
                     op: 'setSideProperty',
@@ -3330,38 +3397,17 @@ export default class DoomMap extends EventTarget {
                         geometry.v0.y,
                         geometry.v1.x,
                         geometry.v1.y,
-                        true,
-                        'x_offset',
-                        offsetX,
+                        isFront,
+                        xOffsetKey,
+                        newOffsetX,
                         true,
                     ],
                 });
 
-                const offsetY = ((this.#cachedOffsetY.get(geometry.frontProperties)
-                    ?? geometry.frontProperties.getValue('y_offset')) + dy + textureSize) % textureSize;
+                const newOffsetY = ((cachedY.get(yOffsetKey) ??
+                    properties.getValue(yOffsetKey)) + dy + textureSize) % textureSize;
 
-                this.#cachedOffsetY.set(geometry.frontProperties, offsetY);
-
-                operations.push({
-                    op: 'setSideProperty',
-                    args: [
-                        geometry.v0.x,
-                        geometry.v0.y,
-                        geometry.v1.x,
-                        geometry.v1.y,
-                        true,
-                        'y_offset',
-                        offsetY,
-                        true,
-                    ],
-                });
-            }
-
-            if (this.#selectedBack.has(geometry)) {
-                const offsetX = ((this.#cachedOffsetX.get(geometry.backProperties)
-                    ?? geometry.backProperties.getValue('x_offset')) + dx + textureSize) % textureSize;
-
-                this.#cachedOffsetX.set(geometry.backProperties, offsetX);
+                cachedY.set(yOffsetKey, newOffsetY);
 
                 operations.push({
                     op: 'setSideProperty',
@@ -3370,28 +3416,9 @@ export default class DoomMap extends EventTarget {
                         geometry.v0.y,
                         geometry.v1.x,
                         geometry.v1.y,
-                        false,
-                        'x_offset',
-                        offsetX,
-                        true,
-                    ],
-                });
-
-                const offsetY = ((this.#cachedOffsetY.get(geometry.backProperties)
-                    ?? geometry.backProperties.getValue('y_offset')) + dy + textureSize) % textureSize;
-
-                this.#cachedOffsetY.set(geometry.backProperties, offsetY);
-
-                operations.push({
-                    op: 'setSideProperty',
-                    args: [
-                        geometry.v0.x,
-                        geometry.v0.y,
-                        geometry.v1.x,
-                        geometry.v1.y,
-                        false,
-                        'y_offset',
-                        offsetY,
+                        isFront,
+                        yOffsetKey,
+                        newOffsetY,
                         true,
                     ],
                 });

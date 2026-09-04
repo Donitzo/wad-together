@@ -23,6 +23,7 @@ export default class BaseProperties {
             [label]: "Label",
             [tooltip]: "Tooltip",
             type: "integer/number/string/boolean",
+            [step]: 1,
             [isEnum]: false,
             // Autocomplete
             [datalist]: [
@@ -86,6 +87,7 @@ export default class BaseProperties {
             this.label = get('label', this.key);
             this.tooltip = get('tooltip', '');
             this.type = get('type');
+            this.step = get('step', 1);
             if (!['integer', 'number', 'string', 'boolean'].includes(this.type)) {
                 throw new Error(`Invalid property type "${this.type}"`);
             }
@@ -680,6 +682,7 @@ export default class BaseProperties {
                         if (Number.isFinite(max)) {
                             input.max = max;
                         }
+                        input.step = property.type === 'integer' ? '1' : property.step;
                         input.value = isMultiValue ? '' : value;
                         input.addEventListener('change', () => {
                             const number = property.type === 'integer'

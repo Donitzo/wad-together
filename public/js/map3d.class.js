@@ -982,6 +982,8 @@ export default class Map3D {
     #createWallsForLine(line) {
         const result = [];
 
+        const segmentWise = this.#doomMap.metadata.hasSegmentedTextureScrolling;
+
         const frontProperties = line.frontProperties;
         const backProperties = line.backProperties;
         const frontSector = line.frontSector;
@@ -1009,9 +1011,22 @@ export default class Map3D {
                 const texture = this.getTextureByName('texture',
                     sideProperties.getValue('texture_middle'), 1);
 
-                const xOffset = sideProperties.getValue('x_offset');
-                const yOffset = -sideProperties.getValue('y_offset') +
-                    (texture.image.height - (top - bottom)) * !line.properties.getValue('lower_unpegged');
+                let xScale = segmentWise ? sideProperties.getValue('x_scale_middle') : 1;
+                let yScale = segmentWise ? sideProperties.getValue('y_scale_middle') : 1;
+                if (xScale === 0) {
+                    xScale = 0.001;
+                }
+                if (yScale === 0) {
+                    yScale = 0.001;
+                }
+
+                const height = texture.image.height / Math.abs(yScale);
+
+                const xOffset = (sideProperties.getValue('x_offset') +
+                    segmentWise * sideProperties.getValue('x_offset_middle')) / xScale;
+                const yOffset = -(sideProperties.getValue('y_offset') +
+                    segmentWise * sideProperties.getValue('y_offset_middle')) / yScale +
+                    (height - (top - bottom)) * !line.properties.getValue('lower_unpegged');
 
                 result.push(this.#createWallMesh(
                     line,
@@ -1021,6 +1036,8 @@ export default class Map3D {
                     top,
                     xOffset,
                     yOffset,
+                    xScale,
+                    yScale,
                     texture,
                     false
                 ));
@@ -1058,10 +1075,23 @@ export default class Map3D {
                 const texture = isSky ? this.#getSkyTexture(1) :
                     this.getTextureByName('texture', lowerSideProperties.getValue('texture_lower'), 1);
 
-                const xOffset = lowerSideProperties.getValue('x_offset');
-                const yOffset = -lowerSideProperties.getValue('y_offset') +
-                    (line.properties.getValue('lower_unpegged') ? texture.image.height -
-                    (upperTop - lowerBottom) : texture.image.height - (lowerTop - lowerBottom));
+                let xScale = segmentWise ? lowerSideProperties.getValue('x_scale_lower') : 1;
+                let yScale = segmentWise ? lowerSideProperties.getValue('y_scale_lower') : 1;
+                if (xScale === 0) {
+                    xScale = 0.001;
+                }
+                if (yScale === 0) {
+                    yScale = 0.001;
+                }
+
+                const height = texture.image.height / Math.abs(yScale);
+
+                const xOffset = (lowerSideProperties.getValue('x_offset') +
+                    segmentWise * lowerSideProperties.getValue('x_offset_lower')) / xScale;
+                const yOffset = -(lowerSideProperties.getValue('y_offset') +
+                    segmentWise * lowerSideProperties.getValue('y_offset_lower')) / yScale +
+                    (line.properties.getValue('lower_unpegged') ? height -
+                    (upperTop - lowerBottom) : height - (lowerTop - lowerBottom));
 
                 result.push(this.#createWallMesh(
                     line,
@@ -1071,6 +1101,8 @@ export default class Map3D {
                     lowerTop,
                     xOffset,
                     yOffset,
+                    xScale,
+                    yScale,
                     texture,
                     isSky
                 ));
@@ -1089,15 +1121,28 @@ export default class Map3D {
                     const texture = this.getTextureByName('texture',
                         middleSideProperties.getValue('texture_middle'), 1);
 
-                    const height = Math.min(middleTop - middleBottom, texture.image.height);
-                    const clampedBottom = line.properties.getValue('lower_unpegged') ?
-                        middleBottom : middleTop - height;
-                    const clampedTop = !line.properties.getValue('lower_unpegged') ?
-                        middleTop : clampedBottom + height;
+                    let xScale = segmentWise ? middleSideProperties.getValue('x_scale_middle') : 1;
+                    let yScale = segmentWise ? middleSideProperties.getValue('y_scale_middle') : 1;
+                    if (xScale === 0) {
+                        xScale = 0.001;
+                    }
+                    if (yScale === 0) {
+                        yScale = 0.001;
+                    }
 
-                    const xOffset = middleSideProperties.getValue('x_offset');
-                    const yOffset = -middleSideProperties.getValue('y_offset') + (texture.image.height -
-                        (clampedTop - clampedBottom)) * !line.properties.getValue('lower_unpegged');
+                    const height = texture.image.height / Math.abs(yScale);
+                    const clampedHeight = Math.min(middleTop - middleBottom, height);
+
+                    const clampedBottom = line.properties.getValue('lower_unpegged') ?
+                        middleBottom : middleTop - clampedHeight;
+                    const clampedTop = !line.properties.getValue('lower_unpegged') ?
+                        middleTop : clampedBottom + clampedHeight;
+
+                    const xOffset = (middleSideProperties.getValue('x_offset') +
+                        segmentWise * middleSideProperties.getValue('x_offset_middle')) / xScale;
+                    const yOffset = -(middleSideProperties.getValue('y_offset') +
+                        segmentWise * middleSideProperties.getValue('y_offset_middle')) / yScale +
+                        (height - (clampedTop - clampedBottom)) * !line.properties.getValue('lower_unpegged');
 
                     result.push(this.#createWallMesh(
                         line,
@@ -1107,6 +1152,8 @@ export default class Map3D {
                         clampedTop,
                         xOffset,
                         yOffset,
+                        xScale,
+                        yScale,
                         texture,
                         false
                     ));
@@ -1131,9 +1178,22 @@ export default class Map3D {
                 this.#getSkyTexture(1) :
                 this.getTextureByName('texture', upperSideProperties.getValue('texture_upper'), 1);
 
-            const xOffset = upperSideProperties.getValue('x_offset');
-            const yOffset = -upperSideProperties.getValue('y_offset') + (texture.image.height -
-                (upperTop - upperBottom)) * line.properties.getValue('upper_unpegged');
+            let xScale = segmentWise ? upperSideProperties.getValue('x_scale_upper') : 1;
+            let yScale = segmentWise ? upperSideProperties.getValue('y_scale_upper') : 1;
+            if (xScale === 0) {
+                xScale = 0.001;
+            }
+            if (yScale === 0) {
+                yScale = 0.001;
+            }
+
+            const height = texture.image.height / Math.abs(yScale);
+
+            const xOffset = (upperSideProperties.getValue('x_offset') +
+                segmentWise * upperSideProperties.getValue('x_offset_upper')) / xScale;
+            const yOffset = -(upperSideProperties.getValue('y_offset') +
+                segmentWise * upperSideProperties.getValue('y_offset_upper')) / yScale +
+                (height - (upperTop - upperBottom)) * line.properties.getValue('upper_unpegged');
 
             const mesh = this.#createWallMesh(
                 line,
@@ -1143,6 +1203,8 @@ export default class Map3D {
                 upperTop,
                 xOffset,
                 yOffset,
+                xScale,
+                yScale,
                 texture,
                 isSky
             );
@@ -1163,11 +1225,13 @@ export default class Map3D {
      * @param {number} top - Top height in map units.
      * @param {number} xOffset - Horizontal texture offset.
      * @param {number} yOffset - Vertical texture offset.
+     * @param {number} xScale - Horizontal texture scale.
+     * @param {number} yScale - Vertical texture scale.
      * @param {THREE.Texture} texture - Texture applied to the wall.
      * @param {boolean} isSky - Whether the material renders as sky.
      * @returns {THREE.Mesh} Generated wall mesh.
      */
-    #createWallMesh(line, isFront, section, bottom, top, xOffset, yOffset, texture, isSky) {
+    #createWallMesh(line, isFront, section, bottom, top, xOffset, yOffset, xScale, yScale, texture, isSky) {
         const geometry = new THREE.BufferGeometry();
 
         const v0 = isFront ? line.v0 : line.v1;
@@ -1190,10 +1254,10 @@ export default class Map3D {
         const deltaY = line.v1.y - line.v0.y;
         const wallLength = Math.hypot(deltaX, deltaY);
 
-        const uStart = xOffset / textureWidth;
-        const uEnd = (xOffset + wallLength) / textureWidth;
-        const vStart = yOffset / textureHeight;
-        const vEnd = (yOffset + (top - bottom)) / textureHeight;
+        const uStart = xOffset * xScale / textureWidth;
+        const uEnd = (xOffset + wallLength) * xScale / textureWidth;
+        const vStart = yOffset * yScale / textureHeight;
+        const vEnd = (yOffset + (top - bottom)) * yScale / textureHeight;
 
         const uvs = new Float32Array([
             uStart, vStart,

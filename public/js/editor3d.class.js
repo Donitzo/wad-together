@@ -451,6 +451,11 @@ export default class Editor3D {
         map.addEventListener('sectorsrebuilt', () => {
             map3d.updateThings();
         });
+        map.addEventListener('metadatachanged', e => {
+            if (e.detail.property === 'port') {
+                map3d.refreshTextures();
+            }
+        });
     }
 
     /**

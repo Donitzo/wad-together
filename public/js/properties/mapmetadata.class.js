@@ -201,4 +201,9 @@ export default class MapMetadata extends BaseProperties {
             default: false,
         }].map(p => new BaseProperties.Property(p)));
     }
+
+    get hasSegmentedTextureScrolling() {
+        const port = this.getValue('port');
+        return port === 'zdoom_udmf' || port === 'gzdoom_udmf';
+    }
 }
