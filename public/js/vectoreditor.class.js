@@ -1547,10 +1547,6 @@ export default class VectorEditor {
      * @param {boolean} [applyOnRelease=false] - Whether the transform is committed on mouse release.
      */
     setMode(mode, overrideGeometries = null, isNewGeometry = false, applyOnRelease = false) {
-        if (!this.isHovered() && mode !== null) {
-            return;
-        }
-
         const transform = this.#modeTransform;
 
         const selection = this.#map.getSelection();
