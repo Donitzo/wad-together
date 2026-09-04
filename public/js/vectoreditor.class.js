@@ -624,7 +624,9 @@ export default class VectorEditor {
         const transforming = this.#mode === 'move' || this.#mode === 'scale' || this.#mode === 'rotate';
         const selectMode = this.#mode === null;
 
-        if (!transforming && this.isHovered()) {
+        const hovered = this.isHovered();
+
+        if (!transforming && hovered) {
             // Grow selection
             if (Input.getKeyDown('Digit1')) {
                 this.#map.growSelection();
@@ -705,126 +707,128 @@ export default class VectorEditor {
         this.#hovered.line = null;
         this.#hovered.sector = null;
 
-        const vertexRadius = input.hover.vertexDistance / camera.scale;
-        const lineRadius = input.hover.lineDistance / camera.scale;
+        if (hovered) {
+            const vertexRadius = input.hover.vertexDistance / camera.scale;
+            const lineRadius = input.hover.lineDistance / camera.scale;
 
-        let minVertexDistance2 = vertexRadius * vertexRadius;
-        let minLineDistance2 = lineRadius * lineRadius;
+            let minVertexDistance2 = vertexRadius * vertexRadius;
+            let minLineDistance2 = lineRadius * lineRadius;
 
-        const boundsMin = VectorEditor.#tmpV21;
-        const boundsMax = VectorEditor.#tmpV22;
+            const boundsMin = VectorEditor.#tmpV21;
+            const boundsMax = VectorEditor.#tmpV22;
 
-        boundsMin.x = worldCursor.x - vertexRadius;
-        boundsMin.y = worldCursor.y - vertexRadius;
-        boundsMax.x = worldCursor.x + vertexRadius;
-        boundsMax.y = worldCursor.y + vertexRadius;
+            boundsMin.x = worldCursor.x - vertexRadius;
+            boundsMin.y = worldCursor.y - vertexRadius;
+            boundsMax.x = worldCursor.x + vertexRadius;
+            boundsMax.y = worldCursor.y + vertexRadius;
 
-        // Hover things
-        const hovered = VectorEditor.#tmpHover;
-        hovered.length = 0;
-        map.iterateThings(thing => {
-            if (thing.isInsideRectangle(
-                worldCursor.x - thingSize / 2,
-                worldCursor.y - thingSize / 2,
-                worldCursor.x + thingSize / 2,
-                worldCursor.y + thingSize / 2)) {
-                hovered.push(thing);
-            }
-        }, boundsMin, boundsMax);
-        if (hovered.length > 0) {
-            this.#hovered.thing = hovered[this.#clickIndex % hovered.length];
-        }
-        if (leftMouseReleased) {
-            this.#clickIndex++;
-        }
-
-        if (this.#hovered.thing === null) {
-            // Hover vertices
-            map.iterateVertices(vertex => {
-                const dx = worldCursor.x - vertex.x;
-                const dy = worldCursor.y - vertex.y;
-                const distance2 = dx * dx + dy * dy;
-
-                // Shrink the radius if it the cursor faces along a short line
-                const distance = Math.hypot(dx, dy);
-                const lineRatio = 0.25;
-
-                let shrunkRadius = vertexRadius;
-
-                if (vertex.lines.length > 0 && distance > 1e-6) {
-                    const px = dx / distance;
-                    const py = dy / distance;
-
-                    vertex.lines.forEach(line => {
-                        const dxl = line.v1.x - line.v0.x;
-                        const dyl = line.v1.y - line.v0.y;
-                        const length = Math.hypot(dxl, dyl);
-
-                        if (length * lineRatio > vertexRadius) {
-                            return;
-                        }
-
-                        let ux;
-                        let uy;
-                        if (vertex === line.v0) {
-                            ux = dxl / length;
-                            uy = dyl / length;
-                        } else {
-                            ux = -dxl / length;
-                            uy = -dyl / length;
-                        }
-                        const dot = px * ux + py * uy;
-                        if (dot > 0.25) {
-                            const t = (dot - 0.25) / 0.75;
-                            shrunkRadius = Math.min(shrunkRadius,
-                                shrunkRadius * (1 - t) + length * lineRatio * t);
-                        }
-                    });
-                }
-
-                if (distance2 < shrunkRadius * shrunkRadius && distance2 < minVertexDistance2) {
-                    minVertexDistance2 = distance2;
-                    this.#hovered.vertex = vertex;
+            // Hover things
+            const hovered = VectorEditor.#tmpHover;
+            hovered.length = 0;
+            map.iterateThings(thing => {
+                if (thing.isInsideRectangle(
+                    worldCursor.x - thingSize / 2,
+                    worldCursor.y - thingSize / 2,
+                    worldCursor.x + thingSize / 2,
+                    worldCursor.y + thingSize / 2)) {
+                    hovered.push(thing);
                 }
             }, boundsMin, boundsMax);
+            if (hovered.length > 0) {
+                this.#hovered.thing = hovered[this.#clickIndex % hovered.length];
+            }
+            if (leftMouseReleased) {
+                this.#clickIndex++;
+            }
 
-            if (this.#hovered.vertex === null) {
-                // Hover lines
-                boundsMin.x = worldCursor.x - lineRadius;
-                boundsMin.y = worldCursor.y - lineRadius;
-                boundsMax.x = worldCursor.x + lineRadius;
-                boundsMax.y = worldCursor.y + lineRadius;
+            if (this.#hovered.thing === null) {
+                // Hover vertices
+                map.iterateVertices(vertex => {
+                    const dx = worldCursor.x - vertex.x;
+                    const dy = worldCursor.y - vertex.y;
+                    const distance2 = dx * dx + dy * dy;
 
-                map.iterateLines(line => {
-                    const distance2 = line.getDistanceSquaredToPoint(worldCursor.x, worldCursor.y);
-                    if (distance2 !== null && distance2 < minLineDistance2) {
-                        minLineDistance2 = distance2;
-                        this.#hovered.line = line;
+                    // Shrink the radius if it the cursor faces along a short line
+                    const distance = Math.hypot(dx, dy);
+                    const lineRatio = 0.25;
+
+                    let shrunkRadius = vertexRadius;
+
+                    if (vertex.lines.length > 0 && distance > 1e-6) {
+                        const px = dx / distance;
+                        const py = dy / distance;
+
+                        vertex.lines.forEach(line => {
+                            const dxl = line.v1.x - line.v0.x;
+                            const dyl = line.v1.y - line.v0.y;
+                            const length = Math.hypot(dxl, dyl);
+
+                            if (length * lineRatio > vertexRadius) {
+                                return;
+                            }
+
+                            let ux;
+                            let uy;
+                            if (vertex === line.v0) {
+                                ux = dxl / length;
+                                uy = dyl / length;
+                            } else {
+                                ux = -dxl / length;
+                                uy = -dyl / length;
+                            }
+                            const dot = px * ux + py * uy;
+                            if (dot > 0.25) {
+                                const t = (dot - 0.25) / 0.75;
+                                shrunkRadius = Math.min(shrunkRadius,
+                                    shrunkRadius * (1 - t) + length * lineRatio * t);
+                            }
+                        });
+                    }
+
+                    if (distance2 < shrunkRadius * shrunkRadius && distance2 < minVertexDistance2) {
+                        minVertexDistance2 = distance2;
+                        this.#hovered.vertex = vertex;
                     }
                 }, boundsMin, boundsMax);
 
-                const line = this.#hovered.line;
-                let nx;
-                let ny;
-                if (line !== null) {
-                    const dx = line.v1.x - line.v0.x;
-                    const dy = line.v1.y - line.v0.y;
-                    const length = Math.max(1e-6, Math.sqrt(dx * dx + dy * dy));
-                    nx = -(dy / length);
-                    ny = dx / length;
-                }
+                if (this.#hovered.vertex === null) {
+                    // Hover lines
+                    boundsMin.x = worldCursor.x - lineRadius;
+                    boundsMin.y = worldCursor.y - lineRadius;
+                    boundsMax.x = worldCursor.x + lineRadius;
+                    boundsMax.y = worldCursor.y + lineRadius;
 
-                // Hover sectors
-                const sector = map.getSector(worldCursor.x, worldCursor.y);
+                    map.iterateLines(line => {
+                        const distance2 = line.getDistanceSquaredToPoint(worldCursor.x, worldCursor.y);
+                        if (distance2 !== null && distance2 < minLineDistance2) {
+                            minLineDistance2 = distance2;
+                            this.#hovered.line = line;
+                        }
+                    }, boundsMin, boundsMax);
 
-                if (sector !== null) {
-                    // Compare with the maximum thickness at the intersection point
-                    const thicknessRatio = 0.25;
-                    const thickness = line === null ? null :
-                        sector.getThicknessThroughPoint(worldCursor.x, worldCursor.y, nx, ny);
-                    if (line === null || minLineDistance2 > Math.pow(thickness * thicknessRatio, 2)) {
-                        this.#hovered.line = null;
-                        this.#hovered.sector = sector;
+                    const line = this.#hovered.line;
+                    let nx;
+                    let ny;
+                    if (line !== null) {
+                        const dx = line.v1.x - line.v0.x;
+                        const dy = line.v1.y - line.v0.y;
+                        const length = Math.max(1e-6, Math.sqrt(dx * dx + dy * dy));
+                        nx = -(dy / length);
+                        ny = dx / length;
+                    }
+
+                    // Hover sectors
+                    const sector = map.getSector(worldCursor.x, worldCursor.y);
+
+                    if (sector !== null) {
+                        // Compare with the maximum thickness at the intersection point
+                        const thicknessRatio = 0.25;
+                        const thickness = line === null ? null :
+                            sector.getThicknessThroughPoint(worldCursor.x, worldCursor.y, nx, ny);
+                        if (line === null || minLineDistance2 > Math.pow(thickness * thicknessRatio, 2)) {
+                            this.#hovered.line = null;
+                            this.#hovered.sector = sector;
+                        }
                     }
                 }
             }
