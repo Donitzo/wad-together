@@ -3627,9 +3627,7 @@ export default class DoomMap extends EventTarget {
             }
 
             if (property === 'is_void') {
-                sector.lines.forEach(line => {
-                    this.#modifiedLines.add(line);
-                });
+                this.#modifiedLines.add(line);
             }
 
             if (!found && this.#transaction !== null) {
