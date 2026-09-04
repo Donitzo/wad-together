@@ -425,14 +425,7 @@ export default class VectorEditor {
      * @returns {boolean} Whether the editor is hovered.
      */
     isHovered() {
-        if (this.#editor3d.isHovered()) {
-            return false;
-        }
-        const position = Input.clientToCanvas(this.#canvas, Input.getCursorPosition(VectorEditor.#tmpV20));
-        return position.x >= 0 &&
-            position.y >= 0 &&
-            position.x <= this.#canvas.width &&
-            position.y <= this.#canvas.height;
+        return this.#canvas.matches(':hover') && !this.#editor3d.canvas.matches(':hover');
     }
 
     /**
@@ -1922,7 +1915,9 @@ export default class VectorEditor {
         }
 
         this.#drawSelectionBox();
-        this.#drawEditGizmos();
+        if (this.isHovered()) {
+            this.#drawEditGizmos();
+        }
         this.#drawPlayerIndicators();
         this.#drawUsers();
     }
@@ -2606,7 +2601,7 @@ export default class VectorEditor {
             ctx.globalAlpha = 1;
         }
 
-        // Draw polar indiactors
+        // Draw polar indicators
         let polarMinX = Infinity;
         let polarMaxX = -Infinity;
         let polarMinY = Infinity;

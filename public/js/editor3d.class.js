@@ -43,8 +43,12 @@ export default class Editor3D {
     /** @type {boolean} Whether the 3D editor currently has focus. */
     #focused = true;
 
-    /** @type {?HTMLCanvasElement} Canvas used by the WebGL renderer. */
+    /** @type {?HTMLCanvasElement} */
     #canvas = null;
+    /** @type {?HTMLCanvasElement} Canvas used by the WebGL renderer. */
+    get canvas() {
+        return this.#canvas;
+    }
 
     /** @type {{x: number, y: number}} Last renderer size in CSS pixels. */
     #lastCanvasSize = { x: 0, y: 0 };
@@ -373,7 +377,7 @@ export default class Editor3D {
      * @returns {boolean} Whether the editor is hovered.
      */
     isHovered() {
-        return this.#canvas.matches(':hover');
+        return this.#canvas.matches(':hover') && !this.#vectorEditor.canvas.matches(':hover');
     }
 
     /**
@@ -749,14 +753,18 @@ export default class Editor3D {
         this.#leftReleased = false;
         this.#mouseWheelDelta = 0;
 
+        // Clear any previous hover
+        this.#map3d.clearHover();
+
         // Only when inside the editor
         const isInside = ndc.x >= -1 && ndc.y >= -1 && ndc.x <= 1 && ndc.y <= 1;
         if (!isInside) {
             return;
         }
 
-        // Clear any previous hover
-        this.#map3d.clearHover();
+        if (!this.isHovered()) {
+            return;
+        }
 
         // Deselect
         if (!shiftHeld && (this.#leftHeld || selectLinkedPressed)) {
