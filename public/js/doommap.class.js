@@ -3626,6 +3626,12 @@ export default class DoomMap extends EventTarget {
                 changedSectors.add(line.backSector);
             }
 
+            if (property === 'is_void') {
+                sector.lines.forEach(line => {
+                    this.#modifiedLines.add(line);
+                });
+            }
+
             if (!found && this.#transaction !== null) {
                 if (!hasLineage) {
                     this.#transaction.undoOperations.push({
@@ -3703,6 +3709,12 @@ export default class DoomMap extends EventTarget {
 
                 properties.setValue(property, value);
             });
+
+            if (property === 'is_void') {
+                sector.lines.forEach(line => {
+                    this.#modifiedLines.add(line);
+                });
+            }
 
             if (isFront) {
                 if (line.frontSector !== null) {
