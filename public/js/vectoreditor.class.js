@@ -3615,10 +3615,10 @@ export default class VectorEditor {
      * @returns {{x: number, y: number}} The converted point.
      */
     #screenToWorld(vertex) {
-        const position = this.#camera.position;
+        const p = this.#camera.position;
         const scale = this.#camera.scale;
-        vertex.x = (vertex.x - this.#canvas.width / 2) / scale + position.x;
-        vertex.y = position.y - (vertex.y - this.#canvas.height / 2) / scale;
+        vertex.x = Math.max(-32768, Math.min(32767, (vertex.x - this.#canvas.width / 2) / scale + p.x));
+        vertex.y = Math.max(-32768, Math.min(32767, p.y - (vertex.y - this.#canvas.height / 2) / scale));
         return vertex;
     }
 
