@@ -221,7 +221,8 @@ export default class LumpManager {
 
         // Load embedded wads
         embeddedWads.forEach(wad => {
-            this.addSourceWad(wad.data.buffer, wad.lumpName);
+            const mapNameMatch = /^maps\/([^/]+)\.wad$/i.exec(wad.lumpName);
+            this.addSourceWad(wad.data.buffer, wad.lumpName, mapNameMatch?.[1].toUpperCase() ?? null);
         });
 
         this.#updateMergedLumps();
@@ -233,8 +234,9 @@ export default class LumpManager {
      *
      * @param {ArrayBuffer} buffer - WAD file data.
      * @param {string} name - Display name.
+     * @param {?string} mapNameOverride - Overrides the first map name if set.
      */
-    addSourceWad(buffer, name) {
+    addSourceWad(buffer, name, mapNameOverride = null) {
         const view = new DataView(buffer);
         const decoder = new TextDecoder();
 
@@ -272,11 +274,15 @@ export default class LumpManager {
         // Find maps
         let map = null;
 
-        lumps.forEach(lump => {
+        lumps.forEach((lump, i) => {
             // Is this lump a map header?
-            const isMapHeader = /^(MAP\d\d|E\dM\d)$/.test(lump.name);
+            const nextLumpName = lumps[i + 1]?.name.toLowerCase();
+            const isMapHeader = /^(MAP\d\d|E\dM\d)$/.test(lump.name) ||
+                nextLumpName === 'things' || nextLumpName === 'textmap';
+
             if (isMapHeader) {
-                const mapName = lump.name;
+                const mapName = mapNameOverride ?? lump.name;
+                mapNameOverride = null;
                 const oldIndex = this.#maps.findIndex(map => map.name === mapName);
                 if (oldIndex > -1) {
                     this.#maps.splice(oldIndex, 1);
