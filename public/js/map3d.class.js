@@ -628,7 +628,7 @@ export default class Map3D {
      * @param {boolean} [forceDetach=false] - Whether to detach walls regardless of remaining users.
      */
     #detachSectorWallMeshes(sector, forceDetach = false) {
-        sector.lines.forEach(line => {
+        sector.allLines.forEach(line => {
             if (!this.#wallVisible.has(line)) {
                 return;
             }
@@ -672,7 +672,7 @@ export default class Map3D {
     #attachVisibleSectorWallMeshes(sector) {
         const visible = this.#visibleSectors.has(sector);
 
-        sector.lines.forEach(line => {
+        sector.allLines.forEach(line => {
             const walls = this.#wallMeshes.get(line);
             if (walls === undefined) {
                 return;
@@ -766,7 +766,7 @@ export default class Map3D {
 
         this.#sectorMeshes.set(sector, meshes);
 
-        sector.lines.forEach(line => {
+        sector.allLines.forEach(line => {
             if (!this.#wallMeshes.has(line)) {
                 this.#wallMeshes.set(line, this.#createWallsForLine(line));
             }
@@ -858,7 +858,7 @@ export default class Map3D {
         });
         this.#sectorMeshes.delete(sector);
 
-        sector.lines.forEach(line => {
+        sector.allLines.forEach(line => {
             const walls = this.#wallMeshes.get(line);
             if (walls !== undefined) {
                 walls.forEach(mesh => {
