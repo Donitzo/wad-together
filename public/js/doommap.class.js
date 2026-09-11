@@ -812,6 +812,35 @@ export default class DoomMap extends EventTarget {
             });
         });
 
+        if (sectorLines.size > 0) {
+            // Get the bounds containing the new sectors
+            const boundsMin = { x: Infinity, y: Infinity };
+            const boundsMax = { x: -Infinity, y: -Infinity };
+
+            sectorLines.forEach(line => {
+                boundsMin.x = Math.min(boundsMin.x, line.v0.x, line.v1.x);
+                boundsMin.y = Math.min(boundsMin.y, line.v0.y, line.v1.y);
+                boundsMax.x = Math.max(boundsMax.x, line.v0.x, line.v1.x);
+                boundsMax.y = Math.max(boundsMax.y, line.v0.y, line.v1.y);
+            });
+
+            // Add stray lines to whichever sector contains their midpoint
+            this.iterateLines(line => {
+                if (line.frontSector !== null || line.backSector !== null) {
+                    return;
+                }
+
+                const x = (line.v0.x + line.v1.x) * 0.5;
+                const y = (line.v0.y + line.v1.y) * 0.5;
+
+                const sector = this.getSector(x, y);
+                if (sector !== null) {
+                    sector.addStrayLine(line);
+                    sectorLines.add(line);
+                }
+            }, boundsMin, boundsMax);
+        }
+
         // Convert between single sided and double sided lines
         sectorLines.forEach(l => {
             if (!this.#lines.has(l)) {
