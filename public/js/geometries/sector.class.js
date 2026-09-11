@@ -16,18 +16,32 @@ export default class Sector extends Geometry {
     }
 
     /** @type {Array<Line>} */
-    #strayLines = [];
-    /** @type {Array<Line>} Stray lines in this sector. */
-    get strayLines() {
-        return this.#strayLines;
+    #allLines = [];
+    /** @type {Array<Line>} Boundary and stray lines of this sector (read-only). */
+    get allLines() {
+        return this.#allLines;
     }
     
-    /** @type {Array<Line>} Get all
-    lines combined. */
-    get allLines() {
-        return [...this.#lines, ...this.#strayLines];
-    }
+    /** @type {Array<Line>} Stray lines in this sector. */
+    #strayLines = [];
 
+    /**
+     * Add a stray line to the sector (line which doesn't form a sector). The sector is connected to the line.
+     *
+     * @param {Line} line - The stray line.
+     */
+    addStrayLine(line) {
+        line.frontSector = this;
+        line.backSector = this;
+        line.frontSectorIsParent = false;
+        line.backSectorIsParent = false;
+        line.frontSectorProperties.copy(this.#properties);
+        line.backSectorProperties.copy(this.#properties);
+    
+        this.#strayLines.push(line);
+        this.#allLines.push(line);
+    }
+    
     /** @type {Array<number>} */
     #flatXY = [];
     /** @type {Array<number>} Flat vertex coordinates. */
@@ -122,6 +136,7 @@ export default class Sector extends Geometry {
             }
 
             this.#lines.push(l);
+            this.#allLines.push(l);
 
             if (line.front) {
                 if (l.frontSector !== null && !l.frontSectorIsParent) {
@@ -321,6 +336,11 @@ export default class Sector extends Geometry {
 
             properties.copy(this.#properties);
         });
+
+        this.#strayLines.forEach(line => {
+            line.frontSectorProperties.copy(this.#properties);
+            line.backSectorProperties.copy(this.#properties);
+        });
     }
 
     /**
@@ -335,8 +355,10 @@ export default class Sector extends Geometry {
         
         // Remove this sector from stray lines
         this.#strayLines.forEach(line => {
-            line.backSector = null;
             line.frontSector = null;
+            line.backSector = null;
+            line.frontSectorIsParent = false;
+            line.backSectorIsParent = false;
         });
 
         // Remove this sector from own line sides.
