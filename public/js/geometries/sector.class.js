@@ -15,6 +15,19 @@ export default class Sector extends Geometry {
         return this.#lines;
     }
 
+    /** @type {Array<Line>} */
+    #strayLines = [];
+    /** @type {Array<Line>} Stray lines in this sector. */
+    get strayLines() {
+        return this.#strayLines;
+    }
+    
+    /** @type {Array<Line>} Get all
+    lines combined. */
+    get allLines() {
+        return [...this.#lines, ...this.#strayLines];
+    }
+
     /** @type {Array<number>} */
     #flatXY = [];
     /** @type {Array<number>} Flat vertex coordinates. */
@@ -319,6 +332,12 @@ export default class Sector extends Geometry {
             throw new Error(`${this} has already been removed`);
         }
         this.#removedFromMap = true;
+        
+        // Remove this sector from stray lines
+        this.#strayLines.forEach(line => {
+            line.backSector = null;
+            line.frontSector = null;
+        });
 
         // Remove this sector from own line sides.
         // If the opposite side is this sector's parent filler, remove that too (degenerate line)
