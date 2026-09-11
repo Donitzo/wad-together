@@ -476,6 +476,63 @@ export default class Sector extends Geometry {
 
         const visitedLines = new Set();
 
+        // Split a self-touching loop into multiple loops
+        const splitLoop = loop => {
+            const splitLoops = [];
+
+            const pending = [loop];
+
+            while (pending.length > 0) {
+                const current = pending.pop();
+
+                const visitedPoint = new Map();
+                const pointCount = current.length / 2;
+
+                let didSplit = false;
+
+                for (let i = 0; i < pointCount; i++) {
+                    const x = current[i * 2 + 0];
+                    const y = current[i * 2 + 1];
+                    const key = (x + 32768) + (y + 32768) * 65536;
+
+                    const previous = visitedPoint.get(key);
+
+                    if (previous === undefined) {
+                        visitedPoint.set(key, i);
+                        continue;
+                    }
+
+                    if (previous === 0 && i === pointCount - 1) {
+                        continue;
+                    }
+
+                    const a = current.slice(previous * 2, (i + 1) * 2);
+                    const b = [
+                        ...current.slice(0, (previous + 1) * 2),
+                        ...current.slice((i + 1) * 2),
+                    ];
+
+                    if (a.length >= 8) {
+                        pending.push(a);
+                    }
+
+                    if (b.length >= 8) {
+                        pending.push(b);
+                    }
+
+                    didSplit = true;
+
+                    break;
+                }
+
+                if (!didSplit) {
+                    splitLoops.push(current);
+                }
+            }
+
+            return splitLoops;
+        };
+
         // Trace a continuous loop along any edges where one side is this sector
         const traceLoop = startLine => {
             const loop = [];
@@ -511,18 +568,6 @@ export default class Sector extends Geometry {
                 v1 = current.v0 === v1 ? current.v1 : current.v0;
             }
 
-            // Ensure CCW winding
-            if (Utility.signedArea2d(loop) < 0) {
-                for (let i = 0, j = loop.length - 2; i < j; i += 2, j -= 2) {
-                    const tx = loop[i];
-                    const ty = loop[i + 1];
-                    loop[i] = loop[j];
-                    loop[i + 1] = loop[j + 1];
-                    loop[j] = tx;
-                    loop[j + 1] = ty;
-                }
-            }
-
             return loop;
         };
 
@@ -535,9 +580,23 @@ export default class Sector extends Geometry {
                     return;
                 }
 
-                const loop = traceLoop(line);
-                if (loop.length >= 6) {
-                    loops.push(loop);
+                const originalLoop = traceLoop(line);
+                if (originalLoop.length >= 6) {
+                    splitLoop(originalLoop).forEach(loop => {
+                        // Ensure CCW winding
+                        if (Utility.signedArea2d(loop) < 0) {
+                            for (let i = 0, j = loop.length - 2; i < j; i += 2, j -= 2) {
+                                const tx = loop[i];
+                                const ty = loop[i + 1];
+                                loop[i] = loop[j];
+                                loop[i + 1] = loop[j + 1];
+                                loop[j] = tx;
+                                loop[j + 1] = ty;
+                            }
+                        }
+
+                        loops.push(loop);
+                    });
                 }
             });
         });
