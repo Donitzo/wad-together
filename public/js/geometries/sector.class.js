@@ -10,7 +10,7 @@ import Utility from '../utility.class.js';
 export default class Sector extends Geometry {
     /** @type {Array<Line>} */
     #lines = [];
-    /** @type {Array<Line>} Boundary lines of this sector. */
+    /** @type {Array<Line>} Boundary lines of this sector (read-only). */
     get lines() {
         return this.#lines;
     }
