@@ -933,9 +933,41 @@ export default class Map3D {
         const textureWidth = texture.image.width;
         const textureHeight = texture.image.height;
 
-        for (let i = 0; i < position.count; i++) {
-            uvs[i * 2 + 0] = position.getX(i) / textureWidth;
-            uvs[i * 2 + 1] = position.getZ(i) / textureHeight;
+        if (this.#doomMap.metadata.hasFlatTransform) {
+            const xOffset = sector.properties.getValue(isFloor ? 'floor_x_offset' : 'ceiling_x_offset');
+            const yOffset = sector.properties.getValue(isFloor ? 'floor_y_offset' : 'ceiling_y_offset');
+
+            let xScale = sector.properties.getValue(isFloor ? 'floor_x_scale' : 'ceiling_x_scale');
+            let yScale = sector.properties.getValue(isFloor ? 'floor_y_scale' : 'ceiling_y_scale');
+
+            const rotation = sector.properties.getValue(
+                isFloor ? 'floor_rotation' : 'ceiling_rotation') * Math.PI / 180;
+
+            if (xScale === 0) {
+                xScale = 0.001;
+            }
+            if (yScale === 0) {
+                yScale = 0.001;
+            }
+
+            const cos = Math.cos(-rotation);
+            const sin = Math.sin(-rotation);
+
+            for (let i = 0; i < position.count; i++) {
+                const x = position.getX(i);
+                const y = position.getZ(i);
+
+                const rotatedX = x * cos - y * sin;
+                const rotatedY = x * sin + y * cos;
+
+                uvs[i * 2 + 0] = (rotatedX + xOffset) * xScale / textureWidth;
+                uvs[i * 2 + 1] = (-rotatedY - yOffset) * yScale / textureHeight;
+            }
+        } else {
+            for (let i = 0; i < position.count; i++) {
+                uvs[i * 2 + 0] = position.getX(i) / textureWidth;
+                uvs[i * 2 + 1] = -position.getZ(i) / textureHeight;
+            }
         }
 
         geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
