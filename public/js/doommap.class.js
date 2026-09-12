@@ -2901,38 +2901,43 @@ export default class DoomMap extends EventTarget {
                 newMatchUpper, newMatchMiddle, newMatchLower
             );
 
-            if (entryVertex !== l.v0) {
-                l.v0.lines.forEach(nextLine => {
+            const pushNextLines = (vertex, useV1) => {
+                const sameSide = [];
+                const otherSide = [];
+
+                vertex.lines.forEach(nextLine => {
                     if (nextLine === l) {
                         return;
                     }
-    
-                    stack.push({
+
+                    const nextIsFront = (useV1 ? nextLine.v1 === vertex : nextLine.v0 === vertex) === !!isFront;
+
+                    const state = {
                         line: nextLine,
-                        isFront: (nextLine.v1 === l.v0) === isFront,
-                        entryVertex: l.v0,
+                        isFront: nextIsFront,
+                        entryVertex: vertex,
                         matchUpper: newMatchUpper,
                         matchMiddle: newMatchMiddle,
                         matchLower: newMatchLower,
-                    });
+                    };
+
+                    if (nextIsFront === !!isFront) {
+                        sameSide.push(state);
+                    } else {
+                        otherSide.push(state);
+                    }
                 });
+
+                stack.push(...otherSide);
+                stack.push(...sameSide);
+            };
+
+            if (entryVertex !== l.v0) {
+                pushNextLines(l.v0, true);
             }
 
             if (entryVertex !== l.v1) {
-                l.v1.lines.forEach(nextLine => {
-                    if (nextLine === l) {
-                        return;
-                    }
-    
-                    stack.push({
-                        line: nextLine,
-                        isFront: (nextLine.v0 === l.v1) === !!isFront,
-                        entryVertex: l.v1,
-                        matchUpper: newMatchUpper,
-                        matchMiddle: newMatchMiddle,
-                        matchLower: newMatchLower,
-                    });
-                });
+                pushNextLines(l.v1, false);
             }
         }
 
