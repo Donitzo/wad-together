@@ -2921,7 +2921,7 @@ export default class DoomMap extends EventTarget {
 
                 stack.push({
                     line: nextLine,
-                    isFront: (nextLine.v0 === l.v1) === isFront,
+                    isFront: (nextLine.v0 === l.v1) === !!isFront,
                     matchUpper: newMatchUpper,
                     matchMiddle: newMatchMiddle,
                     matchLower: newMatchLower,
