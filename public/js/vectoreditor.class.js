@@ -700,15 +700,15 @@ export default class VectorEditor {
         this.#hovered.line = null;
         this.#hovered.sector = null;
 
+        const boundsMin = VectorEditor.#tmpV21;
+        const boundsMax = VectorEditor.#tmpV22;
+        
         if (hovered) {
             const vertexRadius = input.hover.vertexDistance / camera.scale;
             const lineRadius = input.hover.lineDistance / camera.scale;
 
             let minVertexDistance2 = vertexRadius * vertexRadius;
             let minLineDistance2 = lineRadius * lineRadius;
-
-            const boundsMin = VectorEditor.#tmpV21;
-            const boundsMax = VectorEditor.#tmpV22;
 
             boundsMin.x = worldCursor.x - vertexRadius;
             boundsMin.y = worldCursor.y - vertexRadius;
