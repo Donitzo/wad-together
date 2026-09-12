@@ -2839,6 +2839,7 @@ export default class DoomMap extends EventTarget {
         const stack = [{
             line,
             isFront: startFront,
+            entryVertex: null,
             matchUpper: startSection === 'upper',
             matchMiddle: startSection === 'middle',
             matchLower: startSection === 'lower',
@@ -2847,7 +2848,7 @@ export default class DoomMap extends EventTarget {
         const visited = new Set();
 
         while (stack.length > 0) {
-            const { line: l, isFront, matchUpper, matchMiddle, matchLower } = stack.pop();
+            const { line: l, isFront, entryVertex, matchUpper, matchMiddle, matchLower } = stack.pop();
             let key;
             if (isFront) {
                 key = `${l.v0.x},${l.v0.y}:${l.v1.x},${l.v1.y}:${matchUpper}:${matchMiddle}:${matchLower}`;
@@ -2900,33 +2901,39 @@ export default class DoomMap extends EventTarget {
                 newMatchUpper, newMatchMiddle, newMatchLower
             );
 
-            l.v0.lines.forEach(nextLine => {
-                if (nextLine === l) {
-                    return;
-                }
-
-                stack.push({
-                    line: nextLine,
-                    isFront: (nextLine.v1 === l.v0) === isFront,
-                    matchUpper: newMatchUpper,
-                    matchMiddle: newMatchMiddle,
-                    matchLower: newMatchLower,
+            if (entryVertex !== l.v0) {
+                l.v0.lines.forEach(nextLine => {
+                    if (nextLine === l) {
+                        return;
+                    }
+    
+                    stack.push({
+                        line: nextLine,
+                        isFront: (nextLine.v1 === l.v0) === isFront,
+                        entryVertex: l.v0,
+                        matchUpper: newMatchUpper,
+                        matchMiddle: newMatchMiddle,
+                        matchLower: newMatchLower,
+                    });
                 });
-            });
+            }
 
-            l.v1.lines.forEach(nextLine => {
-                if (nextLine === l) {
-                    return;
-                }
-
-                stack.push({
-                    line: nextLine,
-                    isFront: (nextLine.v0 === l.v1) === !!isFront,
-                    matchUpper: newMatchUpper,
-                    matchMiddle: newMatchMiddle,
-                    matchLower: newMatchLower,
+            if (entryVertex !== l.v1) {
+                l.v1.lines.forEach(nextLine => {
+                    if (nextLine === l) {
+                        return;
+                    }
+    
+                    stack.push({
+                        line: nextLine,
+                        isFront: (nextLine.v0 === l.v1) === !!isFront,
+                        entryVertex: l.v1,
+                        matchUpper: newMatchUpper,
+                        matchMiddle: newMatchMiddle,
+                        matchLower: newMatchLower,
+                    });
                 });
-            });
+            }
         }
 
         this.#emitEvent('select', {
