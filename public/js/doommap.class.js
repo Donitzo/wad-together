@@ -4265,7 +4265,7 @@ export default class DoomMap extends EventTarget {
                 return;
             }
 
-            const flipped = !(line.v0.x === v0.x && line.v0.y === v0.y);
+            const flipped = !(line.v0.x === x0 && line.v0.y === y0);
 
             const front = sidedefs[flipped ? l.sideback : l.sidefront];
             const back = sidedefs[flipped ? l.sidefront : l.sideback];
@@ -4295,6 +4295,11 @@ export default class DoomMap extends EventTarget {
 
         if (importLooseVertices) {
             (document.vertexes ?? []).forEach(v => {
+                if (!Number.isInteger(v.x) ||
+                    !Number.isInteger(v.y)) {
+                    roundedCoordinates = true;
+                }
+
                 this.addVertex(Math.round(v.x), Math.round(v.y));
             });
         }
@@ -4315,6 +4320,11 @@ export default class DoomMap extends EventTarget {
         });
 
         (document.things ?? []).forEach(t => {
+            if (!Number.isInteger(t.x) ||
+                !Number.isInteger(t.y)) {
+                roundedCoordinates = true;
+            }
+            
             const thing = this.addThing(
                 t.x,
                 t.y,
