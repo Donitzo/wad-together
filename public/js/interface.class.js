@@ -1495,7 +1495,7 @@ export default class Interface {
             const result = this.#doomMap.import(doc, selectedMapName);
             
             if (result.roundedCoordinates) {
-                alert('This map contains fractional coordinates. They have been rounded to the nearest integer.);
+                alert('This map contains fractional coordinates. They have been rounded to the nearest integer.');
             }
             
             updatePlayerStartPosition();
@@ -1537,7 +1537,7 @@ export default class Interface {
                 const result = this.#doomMap.import(doc, 'MAP01');
 
                 if (result.roundedCoordinates) {
-                    alert('This map contains fractional coordinates. They have been rounded to the nearest integer.);
+                    alert('This map contains fractional coordinates. They have been rounded to the nearest integer.');
                 }
 
                 updatePlayerStartPosition();
