@@ -4229,6 +4229,8 @@ export default class DoomMap extends EventTarget {
             throw new Error(`Invalid port "${port}"`);
         }
 
+        let roundedCoordinates = false;
+
         this.clear();
 
         this.#metadata.import(port, document.metadata ?? {});
@@ -4243,6 +4245,13 @@ export default class DoomMap extends EventTarget {
         (document.linedefs ?? []).forEach(l => {
             const v0 = document.vertexes[l.v1];
             const v1 = document.vertexes[l.v2];
+
+            if (!Number.isInteger(v0.x) ||
+                !Number.isInteger(v0.y) ||
+                !Number.isInteger(v1.x) ||
+                !Number.isInteger(v1.y)) {
+                roundedCoordinates = true;
+            }
 
             const x0 = Math.round(v0.x);
             const y0 = Math.round(v0.y);
@@ -4320,5 +4329,9 @@ export default class DoomMap extends EventTarget {
         this.clearLineLineages();
 
         this.#emitEvent('metadatachanged', { property: 'port', value: port });
+
+        return {
+            roundedCoordinates,
+        };
     }
 }
