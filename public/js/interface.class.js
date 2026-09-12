@@ -1491,7 +1491,13 @@ export default class Interface {
             }
 
             const doc = this.#resourceManager.loadMapAsDocument(selectedMapName);
-            this.#doomMap.import(doc, selectedMapName);
+
+            const result = this.#doomMap.import(doc, selectedMapName);
+            
+            if (result.roundedCoordinates) {
+                alert('This map contains fractional coordinates. They have been rounded to the nearest integer.);
+            }
+            
             updatePlayerStartPosition();
 
             this.#client.sendMap();
@@ -1528,7 +1534,12 @@ export default class Interface {
                 const ast = UdmfParser.parse(text);
                 const doc = MapTransformer.udmfAstToDocument(ast);
 
-                this.#doomMap.import(doc, 'MAP01');
+                const result = this.#doomMap.import(doc, 'MAP01');
+
+                if (result.roundedCoordinates) {
+                    alert('This map contains fractional coordinates. They have been rounded to the nearest integer.);
+                }
+
                 updatePlayerStartPosition();
 
                 this.#client.sendMap();
