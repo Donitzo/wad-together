@@ -1,4 +1,5 @@
 import BaseProperties from '../baseproperties.class.js';
+import specials from '../specials.js';
 
 export default class ThingProperties extends BaseProperties {
     static {
@@ -681,6 +682,7 @@ export default class ThingProperties extends BaseProperties {
             label: 'Special',
             tooltip: 'Action executed by this thing',
             type: 'integer',
+            datalist: (properties, port) => specials.getSpecials(port, 'things'),
             range: {
                 doom_wad: [0, 0],
                 doom_udmf: [0, 0],

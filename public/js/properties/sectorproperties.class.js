@@ -1,4 +1,5 @@
 import BaseProperties from '../baseproperties.class.js';
+import specials from '../specials.js';
 
 export default class SectorProperties extends BaseProperties {
     static {
@@ -87,6 +88,7 @@ export default class SectorProperties extends BaseProperties {
             label: 'Special',
             tooltip: 'Sector behavior / action',
             type: 'integer',
+            datalist: (properties, port) => specials.getSpecials(port, 'sectors'),
             range: {
                 doom_wad: [0, 255],
                 doom_udmf: [0, 32767],
@@ -101,7 +103,9 @@ export default class SectorProperties extends BaseProperties {
                 gzdoom_udmf: [0, 2147483647],
             },
             default: 0,
-        }, {
+        },
+        ...specials.sectorProperties,
+        {
             key: 'tag',
             wadKey: {
                 doom_wad: 'tag',

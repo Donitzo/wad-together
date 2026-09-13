@@ -1,4 +1,5 @@
 import BaseProperties from '../baseproperties.class.js';
+import specials from '../specials.js';
 
 export default class LineProperties extends BaseProperties {
     static {
@@ -330,6 +331,7 @@ export default class LineProperties extends BaseProperties {
             label: 'Special',
             tooltip: 'Line action / behavior',
             type: 'integer',
+            datalist: (properties, port) => specials.getSpecials(port, 'lines'),
             range: {
                 doom_wad: [0, 255],
                 doom_udmf: [0, 32767],
