@@ -56,7 +56,7 @@ export default class VectorEditor {
             impassable: '#ca1600',
             inner: '#c8665a',
             outer: '#ff6811',
-            outerSpecial: '#8b009d',
+            outerSpecial: '#af00c7',
             selected: '#00f4ff',
             special: '#b93dc1',
         },
