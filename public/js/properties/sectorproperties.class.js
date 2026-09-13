@@ -1,5 +1,5 @@
 import BaseProperties from '../baseproperties.class.js';
-import specials from '../specials.js';
+import specials from './specials.js';
 
 export default class SectorProperties extends BaseProperties {
     static {
