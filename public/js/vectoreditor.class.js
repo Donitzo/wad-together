@@ -56,6 +56,7 @@ export default class VectorEditor {
             impassable: '#ca1600',
             inner: '#c8665a',
             outer: '#ff6811',
+            outerSpecial: '#8b009d',
             selected: '#00f4ff',
             special: '#b93dc1',
         },
@@ -2174,7 +2175,9 @@ export default class VectorEditor {
                 fadeSign = Math.sign(frontSector.properties.getValue('floor_height') -
                     backSector.properties.getValue('floor_height'));
             } else {
-                baseColor = theme.line.outer;
+                baseColor = line.properties.getValue('special') > 0 
+                    ? theme.line.outerSpecial 
+                    : theme.line.outer;
                 fadeSign = frontIsVoid ? 1 : (backIsVoid ? -1 : 0);
             }
 
