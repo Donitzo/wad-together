@@ -184,7 +184,7 @@ io.on('connection', socket => {
 
             const bannedUsername = room.bannedIps.get(socket.ip);
             if (bannedUsername !== undefined) {
-                console.warn(`\x1b[33m[server] Rejected banned IP for User<${bannedUsername}:${socket.id}> (IP hash=${socket.ip.slice(0, 4)})`);
+                console.warn(`\x1b[33m[server] Rejected banned IP for User<${bannedUsername.slice(0, 2)}:${socket.id}> (IP hash=${socket.ip.slice(0, 4)})`);
 
                 socket.emit('kicked', { reason: 'You have been banned from the room.', type: 'banned' });
 
@@ -238,7 +238,7 @@ io.on('connection', socket => {
                 color,
                 isAdmin: false,
                 allowEditing: DEFAULT_ALLOW_EDITING,
-                toString: () => `${user.isAdmin ? 'Admin' : 'User'}<${user.index}:${user.username}:${(user.socket?.id ?? '?').slice(0, 4)}>`,
+                toString: () => `${user.isAdmin ? 'Admin' : 'User'}<${user.index}:${user.username.slice(0, 2)}:${(user.socket?.id ?? '?').slice(0, 4)}>`,
             };
 
             if (userIndex === room.users.length) {
@@ -298,7 +298,7 @@ io.on('connection', socket => {
         });
 
         socket.to(room.token).emit('chat', {
-            message: `User <${user.username}> joined the room [${room.roomName}].`,
+            message: `User <${user.username.slice(0, 2)}> joined the room [${room.roomName}].`,
             senderUsername: 'SERVER',
             isAdmin: false,
             color: SERVER_COLOR,
@@ -488,7 +488,7 @@ io.on('connection', socket => {
         target.socket.disconnect(true);
 
         io.to(room.token).emit('chat', {
-            message: `Banned user <${target.username}>`,
+            message: `Banned user <${target.username.slice(0, 2)}>`,
             senderUsername: user.username,
             isAdmin: true,
             color: ADMIN_COLOR,
@@ -530,7 +530,7 @@ io.on('connection', socket => {
         target.socket.disconnect(true);
 
         io.to(room.token).emit('chat', {
-            message:`Kicked user <${target.username}>`,
+            message:`Kicked user <${target.username.slice(0, 2)}>`,
             senderUsername: user.username,
             isAdmin: true,
             color: ADMIN_COLOR,
@@ -604,7 +604,7 @@ io.on('connection', socket => {
         console.log(`\x1b[32m[server] ${room}: ${user} disconnected`);
 
         socket.to(room.token).emit('chat', {
-            message: `User <${user.username}> left the room.`,
+            message: `User <${user.username.slice(0, 2)}> left the room.`,
             senderUsername: 'SERVER',
             isAdmin: false,
             color: SERVER_COLOR,
