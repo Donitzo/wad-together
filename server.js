@@ -13,7 +13,7 @@ const ENABLE_TIMEOUT = false;
 // Number of inactive seconds before closing a server that still has rooms
 const IDLE_CLOSE_SECONDS = 1800;
 // Number of inactive seconds before closing a server with no rooms
-const IDLE_CLOSE_SECONDS_NO_ROOMS = 300;
+const IDLE_CLOSE_SECONDS_NO_ROOMS = 600;
 // Maximum number of seconds allowed for a graceful shutdown before forcing exit
 const FORCE_CLOSE_SECONDS = 60;
 
@@ -367,7 +367,7 @@ io.on('connection', socket => {
             }
         } else {
             io.to(room.token).emit('chat', payload);
-            console.log(`\x1b[32m[server] ${room}: Broadcast chat from ${user}: "${message}"`);
+            console.log(`\x1b[32m[server] ${room}: Broadcast chat from ${user}`);
         }
     });
 
