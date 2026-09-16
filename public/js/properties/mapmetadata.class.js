@@ -202,6 +202,11 @@ export default class MapMetadata extends BaseProperties {
         }].map(p => new BaseProperties.Property(p)));
     }
 
+    get hasFogAndColor() {
+        const port = this.getValue('port');
+        return port === 'zdoom_udmf' || port === 'gzdoom_udmf';
+    }
+
     get hasFlatTransform() {
         const port = this.getValue('port');
         return port === 'zdoom_udmf' || port === 'gzdoom_udmf';

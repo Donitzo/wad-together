@@ -4,11 +4,16 @@ const vertexShader = `
 varying vec4 vClipPosition;
 varying vec2 vUv;
 varying float vYaw;
+varying float vViewDistance;
 
 void main() {
-    vec4 clip = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vec4 view = modelViewMatrix * vec4(position, 1.0);
+    vec4 clip = projectionMatrix * view;
+
     vClipPosition = clip;
     vUv = uv;
+    vViewDistance = length(view.xyz);
+
     gl_Position = clip;
     vYaw = atan(-viewMatrix[2][0], -viewMatrix[2][2]);
 }`;
@@ -29,9 +34,14 @@ uniform float uSelected;
 
 uniform float uIsSky;
 
+uniform vec3 uLightColor;
+uniform vec3 uFadeColor;
+uniform float uFogDensity;
+
 varying vec4 vClipPosition;
 varying vec2 vUv;
 varying float vYaw;
+varying float vViewDistance;
 
 void main() {
     // Get sky or regular UV coordinate
@@ -75,15 +85,20 @@ void main() {
             (uPaletteIndex + 0.5) / (uPaletteCount + uColormapCount)
         )
     ).rgb;
+    vec3 color = mix(baseColor, base, step(1e-6, base.b));
+
+    // Apply light tint
+    color *= mix(uLightColor, vec3(1.0), uIsSky);
+
+    // Apply fog
+    float fogDistance = vViewDistance * 64.0;
+    float fogFactor = mix(exp2((-uFogDensity / 64000.0) * fogDistance), 1.0, uIsSky);
+    color = mix(uFadeColor, color, clamp(fogFactor, 0.0, 1.0));
 
     // Mix the final color
     gl_FragColor = vec4(
         mix(
-            mix(
-                baseColor,
-                base,
-                step(1e-6, base.b)
-            ),
+            color,
             mix(vec3(0.3, 0.5, 1.0), vec3(1.0, 0.3, 1.0), uSelected),
             min(uHovered + uSelected, 0.4)
         ), 1.0);
@@ -118,6 +133,9 @@ export default class DoomMaterial extends THREE.ShaderMaterial {
                 uColormapIndex: { value: 12 },
                 uColormapCount: { value: lut.colormaps.length },
                 uIsSky: { value: options.isSky ?? false },
+                uLightColor: { value: new THREE.Color(0xffffff) },
+                uFadeColor: { value: new THREE.Color(0x000000) },
+                uFogDensity: { value: 0.0 },
             },
             vertexShader,
             fragmentShader,

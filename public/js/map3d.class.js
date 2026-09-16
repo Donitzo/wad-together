@@ -243,8 +243,18 @@ export default class Map3D {
                     thing.properties.getValue('z')) * Map3D.VERTICAL_SCALE;
             }
 
-            const lightLevel = sector?.properties.getValue('light_level') ?? 12;
+            const lightLevel = sector?.properties.getValue('light_level') ?? 160;
             mesh.material.uniforms.uColormapIndex.value = Math.min((255 - lightLevel) >> 3, 31);
+
+            if (this.#doomMap.metadata.hasFogAndColor) {
+                const lightColor = sector?.properties.getValue('light_color') ?? 0xffffff;
+                const fadeColor = sector?.properties.getValue('fade_color') ?? 0x000000;
+                const fogDensity = sector?.properties.getValue('fog_density') ?? 0;
+
+                mesh.material.uniforms.uLightColor.value.setHex(lightColor);
+                mesh.material.uniforms.uFadeColor.value.setHex(fadeColor);
+                mesh.material.uniforms.uFogDensity.value = fogDensity;
+            }
         });
     }
 
@@ -977,6 +987,16 @@ export default class Map3D {
         const lightLevel = sector.properties.getValue('light_level');
         mesh.material.uniforms.uColormapIndex.value = Math.min((255 - lightLevel) >> 3, 31);
 
+        if (this.#doomMap.metadata.hasFogAndColor) {
+            const lightColor = sector.properties.getValue('light_color');
+            const fadeColor = sector.properties.getValue('fade_color');
+            const fogDensity = sector.properties.getValue('fog_density');
+
+            mesh.material.uniforms.uLightColor.value.setHex(lightColor);
+            mesh.material.uniforms.uFadeColor.value.setHex(fadeColor);
+            mesh.material.uniforms.uFogDensity.value = fogDensity;
+        }
+
         const selected = this.#doomMap.isSelected(
             sector,
             null,
@@ -1314,8 +1334,19 @@ export default class Map3D {
         const mesh = new THREE.Mesh(geometry, this.#createMaterial(texture, isSky));
 
         const sectorProperties = isFront ? line.frontSectorProperties : line.backSectorProperties;
+
         const lightLevel = sectorProperties.getValue('light_level');
         mesh.material.uniforms.uColormapIndex.value = Math.min((255 - lightLevel) >> 3, 31);
+
+        if (this.#doomMap.metadata.hasFogAndColor) {
+            const lightColor = sectorProperties.getValue('light_color');
+            const fadeColor = sectorProperties.getValue('fade_color');
+            const fogDensity = sectorProperties.getValue('fog_density');
+
+            mesh.material.uniforms.uLightColor.value.setHex(lightColor);
+            mesh.material.uniforms.uFadeColor.value.setHex(fadeColor);
+            mesh.material.uniforms.uFogDensity.value = fogDensity;
+        }
 
         const selected = this.#doomMap.isSelected(
             line,
@@ -1362,8 +1393,18 @@ export default class Map3D {
 
         const sector = this.#doomMap.getSector(thing.x, thing.y);
 
-        const lightLevel = sector?.properties.getValue('light_level') ?? 12;
+        const lightLevel = sector?.properties.getValue('light_level') ?? 160;
         mesh.material.uniforms.uColormapIndex.value = Math.min((255 - lightLevel) >> 3, 31);
+
+        if (this.#doomMap.metadata.hasFogAndColor) {
+            const lightColor = sector?.properties.getValue('light_color') ?? 0xffffff;
+            const fadeColor = sector?.properties.getValue('fade_color') ?? 0x000000;
+            const fogDensity = sector?.properties.getValue('fog_density') ?? 0;
+
+            mesh.material.uniforms.uLightColor.value.setHex(lightColor);
+            mesh.material.uniforms.uFadeColor.value.setHex(fadeColor);
+            mesh.material.uniforms.uFogDensity.value = fogDensity;
+        }
 
         const positionX = thing.x;
         const positionY = ((sector?.properties.getValue('floor_height') ?? 0) +
