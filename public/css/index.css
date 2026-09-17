@@ -8,7 +8,7 @@
     --background-gallery-item: #121214;
     --background-input: #161618;
     --background-panel-1: #1e1914;
-    --background-panel-1-fade: linear-gradient(180deg,#1e1914ff 0%,#1e1914ff 85%,#1e191400 100%);
+    --background-panele-1-fade: linear-gradient(180deg,#1e1914ff 0%,#1e1914ff 85%,#1e191400 100%);
     --background-panel-2: #201b16;
     --background-selected: #79674f;
     --background-titlebar: #352e27;
@@ -143,6 +143,11 @@ input {
     input[type="checkbox"]:focus-visible {
         outline-offset: 2px;
         outline: 2px solid var(--accent-primary);
+    }
+
+    input[type="color"] {
+        height: 23px;
+        padding: 1px !important;
     }
 
 .property-table {
