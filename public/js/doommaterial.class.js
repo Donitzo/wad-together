@@ -91,9 +91,13 @@ void main() {
     color *= mix(uLightColor, vec3(1.0), uIsSky);
 
     // Apply fog
-    float fogDistance = vViewDistance * 64.0;
-    float fogFactor = mix(exp2((-uFogDensity / 64000.0) * fogDistance), 1.0, uIsSky);
-    color = mix(uFadeColor, color, clamp(fogFactor, 0.0, 1.0));
+    float hasFadeColor = step(1e-6, length(uFadeColor));
+    float fogFactor = mix(
+        clamp(exp2(-uFogDensity * vViewDistance / 1000.0), 0.0, 1.0),
+        1.0,
+        min(uIsSky + (1.0 - hasFadeColor), 1.0)
+    );
+    color = mix(uFadeColor, color, fogFactor);
 
     // Mix the final color
     gl_FragColor = vec4(
