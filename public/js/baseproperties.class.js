@@ -33,6 +33,8 @@ export default class BaseProperties {
                 { value: 1, label: "Label 2" },
                 { value: 2, label: "Label 3" }
             ] / (properties, port) => [ ... ],
+            // For integers only
+            [representation]: null / "color",
             // For numbers (can be per-port)
             [range]: [0, 255],
             // Input range (not validate) (can be per-port)
@@ -100,6 +102,13 @@ export default class BaseProperties {
             }
             this.isEnum = padPorts('isEnum', get('isEnum', false));
             this.datalist = padPorts('datalist', get('datalist', []));
+            this.representation = get('representation', null);
+            if (![null, 'color'].includes(this.representation)) {
+                throw new Error(`Invalid property representation "${this.representation}"`);
+            }
+            if (this.representation === 'color' && this.type !== 'integer') {
+                throw new Error('Color representation requires an integer property');
+            }
             this.range = padPorts('range', get('range', [-Infinity, Infinity]));
             MapTransformer.PORTS.forEach(port => {
                 const hardLimit = this.type === 'integer' ? 0x7fffffff : 1e308;
@@ -741,6 +750,31 @@ export default class BaseProperties {
 
                     case 'integer':
                     case 'number': {
+                        if (property.type === 'integer' && property.representation === 'color') {
+                            input.type = 'color';
+
+                            if (!isMultiValue) {
+                                input.value = `#${value.toString(16).padStart(6, '0')}`;
+                            }
+
+                            input.addEventListener('input', () => {
+                                const value = input.value;
+
+                                if (!/^#[0-9a-f]{6}$/i.test(value)) {
+                                    input.classList.add('input--invalid');
+                                    return;
+                                }
+
+                                const number = Number.parseInt(value.slice(1), 16);
+
+                                input.classList.remove('input--invalid');
+
+                                changeCallback(property.key, number);
+                            });
+
+                            break;
+                        }
+
                         input.type = 'number';
 
                         const range = property.displayRange[port];
