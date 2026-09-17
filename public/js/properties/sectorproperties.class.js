@@ -87,6 +87,7 @@ export default class SectorProperties extends BaseProperties {
             label: 'Light Color',
             tooltip: 'RGB light tint',
             type: 'integer',
+            representation: 'color',
             range: [0, 0xffffff],
             ports: {
                 doom_wad: false,
@@ -108,6 +109,7 @@ export default class SectorProperties extends BaseProperties {
             label: 'Fade Color',
             tooltip: 'RGB fog color',
             type: 'integer',
+            representation: 'color',
             range: [0, 0xffffff],
             ports: {
                 doom_wad: false,
