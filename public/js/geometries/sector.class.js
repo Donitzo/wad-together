@@ -21,7 +21,7 @@ export default class Sector extends Geometry {
     get allLines() {
         return this.#allLines;
     }
-    
+
     /** @type {Array<Line>} Stray lines in this sector. */
     #strayLines = [];
 
@@ -37,11 +37,11 @@ export default class Sector extends Geometry {
         line.backSectorIsParent = false;
         line.frontSectorProperties.copy(this.#properties);
         line.backSectorProperties.copy(this.#properties);
-    
+
         this.#strayLines.push(line);
         this.#allLines.push(line);
     }
-    
+
     /** @type {Array<number>} */
     #flatXY = [];
     /** @type {Array<number>} Flat vertex coordinates. */
@@ -352,7 +352,7 @@ export default class Sector extends Geometry {
             throw new Error(`${this} has already been removed`);
         }
         this.#removedFromMap = true;
-        
+
         // Remove this sector from stray lines
         this.#strayLines.forEach(line => {
             line.frontSector = null;
@@ -792,6 +792,76 @@ export default class Sector extends Geometry {
         }
 
         return false;
+    }
+
+    /**
+     * Check if the floor slope is defined.
+     *
+     * @returns {boolean} Has floor slope.
+     */
+    hasFloorSlope() {
+        const a = this.#properties.getValue('floor_plane_a');
+        const b = this.#properties.getValue('floor_plane_b');
+        const c = this.#properties.getValue('floor_plane_c');
+        const d = this.#properties.getValue('floor_plane_d');
+
+        return !(a === 0 && b === 0 && c === 1 && d === 0);
+    }
+
+    /**
+     * Check if the ceiling slope is defined.
+     *
+     * @returns {boolean} Has ceiling slope.
+     */
+    hasCeilingSlope() {
+        const a = this.#properties.getValue('ceiling_plane_a');
+        const b = this.#properties.getValue('ceiling_plane_b');
+        const c = this.#properties.getValue('ceiling_plane_c');
+        const d = this.#properties.getValue('ceiling_plane_d');
+
+        return !(a === 0 && b === 0 && c === -1 && d === 0);
+    }
+
+    /**
+     * Gets the floor height at a point using the slope equations.
+     *
+     * @param {boolean} useSlopes - Whether to use slopes.
+     * @param {number} x - X-coordinate.
+     * @param {number} y - Y-coordinate.
+     * @returns {number} Floor height.
+     */
+    getFloorHeight(useSlopes = false, x = 0, y = 0) {
+        if (!useSlopes || !this.hasFloorSlope()) {
+            return this.#properties.getValue('floor_height');
+        }
+
+        const a = this.#properties.getValue('floor_plane_a');
+        const b = this.#properties.getValue('floor_plane_b');
+        const c = this.#properties.getValue('floor_plane_c');
+        const d = this.#properties.getValue('floor_plane_d');
+
+        return -(a * x + b * y + d) / c;
+    }
+
+    /**
+     * Gets the ceiling height at a point using the slope equations.
+     *
+     * @param {boolean} useSlopes - Whether to use slopes.
+     * @param {number} x - X-coordinate.
+     * @param {number} y - Y-coordinate.
+     * @returns {number} Ceiling height.
+     */
+    getCeilingHeight(useSlopes = false, x = 0, y = 0) {
+        if (!useSlopes || !this.hasCeilingSlope()) {
+            return this.#properties.getValue('ceiling_height');
+        }
+
+        const a = this.#properties.getValue('ceiling_plane_a');
+        const b = this.#properties.getValue('ceiling_plane_b');
+        const c = this.#properties.getValue('ceiling_plane_c');
+        const d = this.#properties.getValue('ceiling_plane_d');
+
+        return -(a * x + b * y + d) / c;
     }
 
     /**
