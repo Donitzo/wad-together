@@ -12,6 +12,8 @@ export default class BaseProperties {
     static Property = class Property {
         /* options = [{
             key: "key_name",
+            // Force export if any grouped property is non-default
+            [group]: "name" / null,
             // WAD property (can be per-port)
             [wadKey]: "key_name" / null,
             // Bit in WAD property (can be per-port)
@@ -87,6 +89,7 @@ export default class BaseProperties {
             };
 
             this.key = get('key');
+            this.group = get("group", null);
             this.wadKey = padPorts('wadKey', get('wadKey', null));
             this.wadKeyBit = padPorts('wadKeyBit', get('wadKeyBit', null));
             this.wadKeyBitCount = padPorts('wadKeyBitCount', get('wadKeyBitCount', 1));
@@ -463,6 +466,31 @@ export default class BaseProperties {
             return (packed & ~(mask << bit)) | ((packedValue & mask) << bit);
         };
 
+        const exportGroups = new Set();
+
+        this.constructor._properties.forEach(property => {
+            if (!property.ports[port] || !property.export ||
+                property.enabled !== null && !property.enabled(this, port)) {
+                return;
+            }
+
+            if (property.group === null) {
+                return;
+            }
+
+            const key = getKey(property);
+            if (key === null) {
+                return;
+            }
+
+            const value = this.#values.get(property.key);
+            const exportDefault = getExportDefault(property);
+
+            if (value !== exportDefault) {
+                exportGroups.add(property.group);
+            }
+        });
+
         this.constructor._properties.forEach(property => {
             if (!property.ports[port] || !property.export ||
                 property.enabled !== null && !property.enabled(this, port)) {
@@ -484,7 +512,8 @@ export default class BaseProperties {
                     bitBuckets.set(key, value);
 
                     const exportDefault = getExportDefault(property);
-                    if (includeDefaults || property.alwaysExport || value !== exportDefault) {
+                    if (includeDefaults || property.alwaysExport || value !== exportDefault ||
+                        property.group !== null && exportGroups.has(property.group)) {
                         exportBitBucket.add(key);
                     }
                 }
@@ -498,7 +527,8 @@ export default class BaseProperties {
 
             bitBuckets.set(key, setPackedBits(property, previous, bit, bitCount, defaultValue));
 
-            if (includeDefaults || property.alwaysExport) {
+            if (includeDefaults || property.alwaysExport ||
+                property.group !== null && exportGroups.has(property.group)) {
                 exportBitBucket.add(key);
             }
         });
@@ -530,14 +560,16 @@ export default class BaseProperties {
 
                 bitBuckets.set(key, setPackedBits(property, previous, bit, bitCount, value));
 
-                if (includeDefaults || property.alwaysExport || value !== exportDefault) {
+                if (includeDefaults || property.alwaysExport || value !== exportDefault ||
+                    property.group !== null && exportGroups.has(property.group)) {
                     exportBitBucket.add(key);
                 }
 
                 return;
             }
 
-            if (!includeDefaults && !property.alwaysExport && value === exportDefault) {
+            if (!includeDefaults && !property.alwaysExport && value === exportDefault &&
+                !(property.group !== null && exportGroups.has(property.group))) {
                 return;
             }
 
