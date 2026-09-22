@@ -347,6 +347,19 @@ export default class VectorEditor {
     /** @type {number} Thing type created by thing mode. */
     #modeThingTypeId = 1;
 
+    /** @type {number} Line connected to slope sector. */
+    #modeSlopeSectorLine = null;
+    /** @type {number} Whether the slope sector is on the front side of the line. */
+    #modeSlopeSectorLineFront = null;
+    /** @type {{x: number, y: number}} Slope center position. */
+    #modeSlopeCenter = { x: 0, y: 0 };
+    /** @type {{x: number, y: number}} Slope target position. */
+    #modeSlopeTarget = { x: 0, y: 0 };
+    /** @type {number} Slope strength / height. */
+    #modeSlopeLength = 0;
+    /** @type {boolean} Whether the slope is for the floor. */
+    #modeSlopeIsFloor = false;
+
     /** @type {string} Default cursor CSS value. */
     #cursorDefault = Utility.createCrosshairCursor('#ecd2ad');
     /** @type {string} Selection cursor CSS value. */
@@ -703,7 +716,7 @@ export default class VectorEditor {
 
         const boundsMin = VectorEditor.#tmpV21;
         const boundsMax = VectorEditor.#tmpV22;
-        
+
         if (hovered) {
             const vertexRadius = input.hover.vertexDistance / camera.scale;
             const lineRadius = input.hover.lineDistance / camera.scale;
@@ -1498,6 +1511,181 @@ export default class VectorEditor {
                         this.#pendingSelections.set(id, newSelection);
                     }
                 }
+
+                break;
+
+            case 'slope':
+                if (this.#subMode === 0) {
+                    if (leftMousePressed && this.#hovered.sector !== null) {
+                        const sector = this.#hovered.sector;
+                        const line = sector.lines[0];
+                        const isFront = line.frontSector === sector;
+
+                        const key = this.#modeSlopeIsFloor ? 'floor' : 'ceiling';
+
+                        const isSloped = this.#modeSlopeIsFloor
+                            ? sector.hasFloorSlope()
+                            : sector.hasCeilingSlope();
+
+                        if (isSloped) {
+                            this.#client.sendTransaction([{
+                                op: 'setSectorPropertyBySide',
+                                args: [
+                                    line.v0.x, line.v0.y,
+                                    line.v1.x, line.v1.y,
+                                    isFront,
+                                    `${key}_plane_a`,
+                                    0,
+                                ],
+                            }, {
+                                op: 'setSectorPropertyBySide',
+                                args: [
+                                    line.v0.x, line.v0.y,
+                                    line.v1.x, line.v1.y,
+                                    isFront,
+                                    `${key}_plane_b`,
+                                    0,
+                                ],
+                            }, {
+                                op: 'setSectorPropertyBySide',
+                                args: [
+                                    line.v0.x, line.v0.y,
+                                    line.v1.x, line.v1.y,
+                                    isFront,
+                                    `${key}_plane_c`,
+                                    this.#modeSlopeIsFloor ? 1 : -1,
+                                ],
+                            }, {
+                                op: 'setSectorPropertyBySide',
+                                args: [
+                                    line.v0.x, line.v0.y,
+                                    line.v1.x, line.v1.y,
+                                    isFront,
+                                    `${key}_plane_d`,
+                                    0,
+                                ],
+                            }]);
+                        } else {
+                            const x = Math.round(snappedCursor.x);
+                            const y = Math.round(snappedCursor.y);
+
+                            this.#modeSlopeSectorLine = line;
+                            this.#modeSlopeSectorLineFront = line.frontSector === sector;
+
+                            this.#modeSlopeCenter.x = x;
+                            this.#modeSlopeCenter.y = y;
+                            this.#modeSlopeTarget.x = this.#modeSlopeCenter.x;
+                            this.#modeSlopeTarget.y = this.#modeSlopeCenter.y;
+
+                            this.#subMode = 1;
+                        }
+                    }
+                } else if (this.#subMode === 1) {
+                    this.#modeSlopeTarget.x = Math.round(snappedCursor.x);
+                    this.#modeSlopeTarget.y = Math.round(snappedCursor.y);
+
+                    this.#modeSlopeLength = 0;
+
+                    if (leftMousePressed) {
+                        this.#subMode = 2;
+                    }
+                } else {
+                    const dx = this.#modeSlopeTarget.x - this.#modeSlopeCenter.x;
+                    const dy = this.#modeSlopeTarget.y - this.#modeSlopeCenter.y;
+                    const length = Math.hypot(dx, dy);
+
+                    if (length > 0) {
+                        const nx = dx / length;
+                        const ny = dy / length;
+
+                        const newLength = Math.round(
+                            (worldCursor.x - this.#modeSlopeCenter.x) * nx +
+                            (worldCursor.y - this.#modeSlopeCenter.y) * ny
+                        );
+
+                        if (newLength !== this.#modeSlopeLength) {
+                            this.#modeSlopeLength = newLength;
+
+                            const slope = this.#modeSlopeLength / length;
+
+                            const l = this.#modeSlopeSectorLine;
+                            const line = this.#map.getLine(l.v0.x, l.v0.y, l.v1.x, l.v1.y);
+                            if (line === null) {
+                                this.setMode(null);
+                                break;
+                            }
+                            const isFront = this.#modeSlopeSectorLineFront;
+                            const sector = isFront ? line.frontSector : line.backSector;
+                            if (sector === null) {
+                                this.setMode(null);
+                                break;
+                            }
+
+                            const key = this.#modeSlopeIsFloor ? 'floor' : 'ceiling';
+
+                            let c = this.#modeSlopeIsFloor ? 1 : -1;
+                            let a = -c * nx * slope;
+                            let b = -c * ny * slope;
+                            let d = -(
+                                a * this.#modeSlopeCenter.x +
+                                b * this.#modeSlopeCenter.y +
+                                c * sector.properties.getValue(`${key}_height`)
+                            );
+
+                            const normalLength = Math.hypot(a, b, c);
+
+                            a /= normalLength;
+                            b /= normalLength;
+                            c /= normalLength;
+                            d /= normalLength;
+
+                            this.#client.sendTransaction([{
+                                op: 'setSectorPropertyBySide',
+                                args: [
+                                    line.v0.x, line.v0.y,
+                                    line.v1.x, line.v1.y,
+                                    isFront,
+                                    `${key}_plane_a`,
+                                    a,
+                                ],
+                            }, {
+                                op: 'setSectorPropertyBySide',
+                                args: [
+                                    line.v0.x, line.v0.y,
+                                    line.v1.x, line.v1.y,
+                                    isFront,
+                                    `${key}_plane_b`,
+                                    b,
+                                ],
+                            }, {
+                                op: 'setSectorPropertyBySide',
+                                args: [
+                                    line.v0.x, line.v0.y,
+                                    line.v1.x, line.v1.y,
+                                    isFront,
+                                    `${key}_plane_c`,
+                                    c,
+                                ],
+                            }, {
+                                op: 'setSectorPropertyBySide',
+                                args: [
+                                    line.v0.x, line.v0.y,
+                                    line.v1.x, line.v1.y,
+                                    isFront,
+                                    `${key}_plane_d`,
+                                    d,
+                                ],
+                            }]);
+                        }
+                    } else {
+                        this.#modeSlopeLength = 0;
+                    }
+
+                    if (leftMousePressed) {
+                        this.#subMode = 0;
+                    }
+                }
+
                 break;
         }
 
@@ -1699,6 +1887,15 @@ export default class VectorEditor {
         document.querySelectorAll('.mode-button').forEach(button => {
             button.classList.toggle('selected', (button.dataset.mode ?? null) === this.#mode);
         });
+
+        switch (this.#mode) {
+            case 'ceiling-slope':
+            case 'floor-slope':
+                this.#modeSlopeIsFloor = this.#mode === 'floor-slope';
+                this.#mode = 'slope';
+
+                break;
+        }
     }
 
     /**
@@ -1800,6 +1997,24 @@ export default class VectorEditor {
                 const definition = this.#resourceManager.thingDefinitions.find(
                     definition => definition.id === this.#modeThingTypeId);
                 this.#elementStatus.innerText = `Thing: Add thing (${definition?.name ?? 'missing'})\nEsc / E to cancel\n${coordinate}`;
+                break;
+
+            case 'slope':
+                switch (this.#subMode) {
+                    case 0:
+                        this.#elementStatus.innerText = `Slope: Select sector and slope center\nEsc / E to cancel\n${coordinate}`;
+                        break;
+
+                    case 1:
+                        this.#elementStatus.innerText =
+                            `Slope: Select slope direction\nEsc / E to cancel\n${coordinate}`;
+                        break;
+
+                    case 2:
+                        this.#elementStatus.innerText =
+                            `Slope: Scroll to adjust slope angle\nEsc / E to cancel\n${coordinate}`;
+                        break;
+                }
                 break;
         }
     }
@@ -2175,8 +2390,8 @@ export default class VectorEditor {
                 fadeSign = Math.sign(frontSector.properties.getValue('floor_height') -
                     backSector.properties.getValue('floor_height'));
             } else {
-                baseColor = line.properties.getValue('special') > 0 
-                    ? theme.line.outerSpecial 
+                baseColor = line.properties.getValue('special') > 0
+                    ? theme.line.outerSpecial
                     : theme.line.outer;
                 fadeSign = frontIsVoid ? 1 : (backIsVoid ? -1 : 0);
             }
@@ -3007,6 +3222,66 @@ export default class VectorEditor {
             case 'thing':
                 ctx.fillStyle = theme.gizmos.drawFill;
                 ctx.fillRect(sx - 4, sy - 4, 8, 8);
+
+                break;
+
+            case 'slope':
+                v0.x = this.#modeSlopeCenter.x;
+                v0.y = this.#modeSlopeCenter.y;
+                v1.x = this.#modeSlopeTarget.x;
+                v1.y = this.#modeSlopeTarget.y;
+                this.#worldToScreen(v0);
+                this.#worldToScreen(v1);
+
+                if (this.#subMode === 0) {
+                    ctx.fillStyle = theme.gizmos.drawFill;
+                    ctx.fillRect(sx - 4, sy - 4, 8, 8);
+                }
+
+                if (this.#subMode > 0) {
+                    const dx = v1.x - v0.x;
+                    const dy = v1.y - v0.y;
+                    const length = Math.hypot(dx, dy);
+
+                    if (length > 0) {
+                        const nx = dx / length;
+                        const ny = dy / length;
+
+                        ctx.beginPath();
+                        ctx.moveTo(v0.x, v0.y);
+                        ctx.lineTo(v1.x - nx * 10, v1.y - ny * 10);
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = this.#subMode === 1 ? theme.gizmos.drawFill : theme.gizmos.guide;
+                        ctx.stroke();
+
+                        ctx.beginPath();
+                        ctx.moveTo(v1.x, v1.y);
+                        ctx.lineTo(
+                            v1.x - nx * 10 - ny * 6,
+                            v1.y - ny * 10 + nx * 6
+                        );
+                        ctx.lineTo(
+                            v1.x - nx * 10 + ny * 6,
+                            v1.y - ny * 10 - nx * 6
+                        );
+                        ctx.closePath();
+                        ctx.fillStyle = ctx.strokeStyle;
+                        ctx.fill();
+                        ctx.fillStyle = theme.gizmos.drawFill;
+                        ctx.fillRect(v0.x - 4, v0.y - 4, 8, 8);
+
+                        if (this.#subMode > 1) {
+                            ctx.beginPath();
+                            ctx.moveTo(v0.x, v0.y);
+                            ctx.lineTo(
+                                v0.x + nx * this.#modeSlopeLength * scale,
+                                v0.y + ny * this.#modeSlopeLength * scale
+                            );
+                            ctx.strokeStyle = theme.gizmos.drawFill;
+                            ctx.stroke();
+                        }
+                    }
+                }
 
                 break;
         }

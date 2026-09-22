@@ -239,8 +239,11 @@ export default class Map3D {
             const sector = this.#doomMap.getSector(thing.x, thing.y);
 
             if (sector !== null) {
-                mesh.position.y = (sector.properties.getValue('floor_height') +
-                    thing.properties.getValue('z')) * Map3D.VERTICAL_SCALE;
+                mesh.position.y = (sector.getFloorHeight(
+                    this.#doomMap.metadata.hasSlopes,
+                    thing.x,
+                    thing.y
+                ) + thing.properties.getValue('z')) * Map3D.VERTICAL_SCALE;
             }
 
             const lightLevel = sector?.properties.getValue('light_level') ?? 160;
@@ -915,9 +918,6 @@ export default class Map3D {
 
         const geometry = new THREE.ShapeGeometry(shape);
 
-        const height = isFloor ? sector.properties.getValue('floor_height') :
-            sector.properties.getValue('ceiling_height');
-
         geometry.rotateX(-Math.PI / 2);
         if (!isFloor) {
             for (let i = 0; i < geometry.index.array.length; i += 3) {
@@ -926,7 +926,27 @@ export default class Map3D {
                 geometry.index.array[i + 2] = temp;
             }
         }
-        geometry.translate(0, height * Map3D.VERTICAL_SCALE, 0);
+
+        if (this.#doomMap.metadata.hasSlopes) {
+            const position = geometry.attributes.position;
+
+            for (let i = 0; i < position.count; i++) {
+                const mapX = position.getX(i);
+                const mapY = -position.getZ(i);
+
+                const height = isFloor ?
+                    sector.getFloorHeight(true, mapX, mapY) :
+                    sector.getCeilingHeight(true, mapX, mapY);
+
+                position.setY(i, height * Map3D.VERTICAL_SCALE);
+            }
+        } else {
+            const height = isFloor ?
+                sector.properties.getValue('floor_height') :
+                sector.properties.getValue('ceiling_height');
+
+            geometry.translate(0, height * Map3D.VERTICAL_SCALE, 0);
+        }
 
         const textureName = isFloor ? sector.properties.getValue('floor_texture') :
             sector.properties.getValue('ceiling_texture');
@@ -1046,6 +1066,8 @@ export default class Map3D {
             return result;
         }
 
+        const useSlopes = this.#doomMap.metadata.hasSlopes;
+
         for (const isFront of [false, true]) {
             const sideProperties = isFront ? frontProperties : backProperties;
             const sector = isFront ? frontSector : backSector;
@@ -1056,10 +1078,12 @@ export default class Map3D {
                 continue;
             }
 
-            const bottom = sector.properties.getValue('floor_height');
-            const top = sector.properties.getValue('ceiling_height');
+            const bottom0 = sector.getFloorHeight(useSlopes, line.v0.x, line.v0.y);
+            const bottom1 = sector.getFloorHeight(useSlopes, line.v1.x, line.v1.y);
+            const top0 = sector.getCeilingHeight(useSlopes, line.v0.x, line.v0.y);
+            const top1 = sector.getCeilingHeight(useSlopes, line.v1.x, line.v1.y);
 
-            if (bottom < top) {
+            if (bottom0 < top0 || bottom1 < top1) {
                 const texture = this.getTextureByName('texture',
                     sideProperties.getValue('texture_middle'), 1);
 
@@ -1074,6 +1098,9 @@ export default class Map3D {
 
                 const height = texture.image.height / Math.abs(yScale);
 
+                const top = sector.properties.getValue('ceiling_height');
+                const bottom = sector.properties.getValue('floor_height');
+
                 const xOffset = (sideProperties.getValue('x_offset') +
                     segmentWise * sideProperties.getValue('x_offset_middle')) / xScale;
                 const yOffset = -(sideProperties.getValue('y_offset') +
@@ -1084,8 +1111,11 @@ export default class Map3D {
                     line,
                     isFront,
                     'middle',
+                    bottom0,
+                    bottom1,
+                    top0,
+                    top1,
                     bottom,
-                    top,
                     xOffset,
                     yOffset,
                     xScale,
@@ -1102,55 +1132,117 @@ export default class Map3D {
             return result;
         }
 
+        const frontCeilingHeight = frontSector.properties.getValue('ceiling_height');
+        const frontFloorHeight = frontSector.properties.getValue('floor_height');
+        const backCeilingHeight = backSector.properties.getValue('ceiling_height');
+        const backFloorHeight = backSector.properties.getValue('floor_height');
+
         const skyTexture = this.#doomMap.metadata.getValue('sky_texture');
 
-        const frontFloor = frontSector.properties.getValue('floor_height');
-        const frontCeiling = frontSector.properties.getValue('ceiling_height');
-        const backFloor = backSector.properties.getValue('floor_height');
-        const backCeiling = backSector.properties.getValue('ceiling_height');
+        const frontFloor0 = frontSector.getFloorHeight(useSlopes, line.v0.x, line.v0.y);
+        const frontFloor1 = frontSector.getFloorHeight(useSlopes, line.v1.x, line.v1.y);
 
-        if (frontFloor !== backFloor) {
-            const lowerBottom = Math.min(frontFloor, backFloor);
-            const lowerTop = Math.max(frontFloor, backFloor);
-            const upperTop = Math.max(frontCeiling, backCeiling);
+        const frontCeiling0 = frontSector.getCeilingHeight(useSlopes, line.v0.x, line.v0.y);
+        const frontCeiling1 = frontSector.getCeilingHeight(useSlopes, line.v1.x, line.v1.y);
 
-            if (lowerBottom < lowerTop) {
-                const isFront = frontFloor < backFloor;
-                const lowerSideProperties = isFront ? frontProperties : backProperties;
+        const backFloor0 = backSector.getFloorHeight(useSlopes, line.v0.x, line.v0.y);
+        const backFloor1 = backSector.getFloorHeight(useSlopes, line.v1.x, line.v1.y);
 
-                const frontFloorTexture = frontSector.properties.getValue('floor_texture') ?? '';
-                const backFloorTexture = backSector.properties.getValue('floor_texture') ?? '';
-                const isSky = skyTexture !== '' &&
-                    frontFloorTexture === skyTexture &&
-                    backFloorTexture === skyTexture;
+        const backCeiling0 = backSector.getCeilingHeight(useSlopes, line.v0.x, line.v0.y);
+        const backCeiling1 = backSector.getCeilingHeight(useSlopes, line.v1.x, line.v1.y);
 
-                const texture = isSky ? this.#getSkyTexture(1) :
-                    this.getTextureByName('texture', lowerSideProperties.getValue('texture_lower'), 1);
+        const middleBottom0 = Math.max(frontFloor0, backFloor0);
+        const middleBottom1 = Math.max(frontFloor1, backFloor1);
 
-                let xScale = segmentWise ? lowerSideProperties.getValue('x_scale_lower') : 1;
-                let yScale = segmentWise ? lowerSideProperties.getValue('y_scale_lower') : 1;
+        const middleTop0 = Math.min(frontCeiling0, backCeiling0);
+        const middleTop1 = Math.min(frontCeiling1, backCeiling1);
+
+        if (frontCeiling0 !== backCeiling0 || frontCeiling1 !== backCeiling1) {
+            const upperBottom0 = middleTop0;
+            const upperBottom1 = middleTop1;
+
+            const upperTop0 = Math.max(frontCeiling0, backCeiling0);
+            const upperTop1 = Math.max(frontCeiling1, backCeiling1);
+
+            for (const isFront of [false, true]) {
+                const upperSideProperties = isFront ? frontProperties : backProperties;
+
+                const ownCeiling0 = isFront ? frontCeiling0 : backCeiling0;
+                const ownCeiling1 = isFront ? frontCeiling1 : backCeiling1;
+
+                const otherCeiling0 = isFront ? backCeiling0 : frontCeiling0;
+                const otherCeiling1 = isFront ? backCeiling1 : frontCeiling1;
+
+                const sideBottom0 = ownCeiling0 < otherCeiling0 ? upperTop0 : upperBottom0;
+                const sideBottom1 = ownCeiling1 < otherCeiling1 ? upperTop1 : upperBottom1;
+
+                if (sideBottom0 >= upperTop0 && sideBottom1 >= upperTop1) {
+                    continue;
+                }
+
+                const frontCeilingTexture = frontSector.properties.getValue('ceiling_texture') ?? '';
+                const backCeilingTexture = backSector.properties.getValue('ceiling_texture') ?? '';
+
+                const isSky =
+                    skyTexture !== '' &&
+                    frontCeilingTexture === skyTexture &&
+                    backCeilingTexture === skyTexture;
+
+                const texture = isSky
+                    ? this.#getSkyTexture(1)
+                    : this.getTextureByName(
+                        'texture',
+                        upperSideProperties.getValue('texture_upper'),
+                        1
+                    );
+
+                let xScale = segmentWise ? upperSideProperties.getValue('x_scale_upper') : 1;
+
+                let yScale = segmentWise ? upperSideProperties.getValue('y_scale_upper') : 1;
+
                 if (xScale === 0) {
                     xScale = 0.001;
                 }
+
                 if (yScale === 0) {
                     yScale = 0.001;
                 }
 
                 const height = texture.image.height / Math.abs(yScale);
 
-                const xOffset = (lowerSideProperties.getValue('x_offset') +
-                    segmentWise * lowerSideProperties.getValue('x_offset_lower')) / xScale;
-                const yOffset = -(lowerSideProperties.getValue('y_offset') +
-                    segmentWise * lowerSideProperties.getValue('y_offset_lower')) / yScale +
-                    (line.properties.getValue('lower_unpegged') ? height -
-                    (upperTop - lowerBottom) : height - (lowerTop - lowerBottom));
+                const upperTop = Math.max(
+                    backCeilingHeight,
+                    frontCeilingHeight
+                );
+
+                const upperBottom = Math.min(
+                    backCeilingHeight,
+                    frontCeilingHeight
+                );
+
+                const xOffset = (
+                    upperSideProperties.getValue('x_offset') +
+                    segmentWise *
+                    upperSideProperties.getValue('x_offset_upper')
+                ) / xScale;
+
+                const yOffset = -(
+                    upperSideProperties.getValue('y_offset') +
+                    segmentWise *
+                    upperSideProperties.getValue('y_offset_upper')
+                ) / yScale + (
+                    height - (upperTop - upperBottom)
+                ) * line.properties.getValue('upper_unpegged');
 
                 result.push(this.#createWallMesh(
                     line,
                     isFront,
-                    'lower',
-                    lowerBottom,
-                    lowerTop,
+                    'upper',
+                    sideBottom0,
+                    sideBottom1,
+                    upperTop0,
+                    upperTop1,
+                    upperBottom,
                     xOffset,
                     yOffset,
                     xScale,
@@ -1161,10 +1253,7 @@ export default class Map3D {
             }
         }
 
-        const middleBottom = Math.max(frontFloor, backFloor);
-        const middleTop = Math.min(frontCeiling, backCeiling);
-
-        if (middleBottom < middleTop) {
+        if (middleBottom0 < middleTop0 || middleBottom1 < middleTop1) {
             for (let isFront = 0; isFront < 2; isFront++) {
                 const middleSideProperties = isFront ? frontProperties : backProperties;
 
@@ -1190,6 +1279,9 @@ export default class Map3D {
                     let textureBottom;
                     let textureTop;
 
+                    const middleBottom = Math.max(backFloorHeight, frontFloorHeight);
+                    const middleTop = Math.min(backCeilingHeight, frontCeilingHeight);
+
                     if (line.properties.getValue('lower_unpegged')) {
                         textureBottom = middleBottom + yOffset;
                         textureTop = textureBottom + height;
@@ -1198,10 +1290,15 @@ export default class Map3D {
                         textureBottom = textureTop - height;
                     }
 
-                    const clampedBottom = Math.max(textureBottom, middleBottom);
-                    const clampedTop = Math.min(textureTop, middleTop);
+                    const clampedBottom0 = Math.max(textureBottom, middleBottom0);
+                    const clampedBottom1 = Math.max(textureBottom, middleBottom1);
 
-                    if (clampedBottom < clampedTop) {
+                    const clampedTop0 = Math.min(textureTop, middleTop0);
+                    const clampedTop1 = Math.min(textureTop, middleTop1);
+
+                    if (clampedBottom0 < clampedTop0 || clampedBottom1 < clampedTop1) {
+                        const clampedBottom = Math.max(textureBottom, middleBottom);
+
                         const xOffset = (middleSideProperties.getValue('x_offset') +
                             segmentWise * middleSideProperties.getValue('x_offset_middle')) / xScale;
 
@@ -1211,8 +1308,11 @@ export default class Map3D {
                             line,
                             isFront,
                             'middle',
+                            clampedBottom0,
+                            clampedBottom1,
+                            clampedTop0,
+                            clampedTop1,
                             clampedBottom,
-                            clampedTop,
                             xOffset,
                             yOffset,
                             xScale,
@@ -1225,55 +1325,99 @@ export default class Map3D {
             }
         }
 
-        const upperBottom = Math.min(frontCeiling, backCeiling);
-        const upperTop = Math.max(frontCeiling, backCeiling);
+        if (frontFloor0 !== backFloor0 || frontFloor1 !== backFloor1) {
+            const lowerBottom0 = Math.min(frontFloor0, backFloor0);
+            const lowerBottom1 = Math.min(frontFloor1, backFloor1);
 
-        if (upperBottom < upperTop) {
-            const isFront = frontCeiling > backCeiling;
-            const upperSideProperties = isFront ? frontProperties : backProperties;
+            const lowerTop0 = Math.max(frontFloor0, backFloor0);
+            const lowerTop1 = Math.max(frontFloor1, backFloor1);
 
-            const frontCeilingTexture = frontSector.properties.getValue('ceiling_texture') ?? '';
-            const backCeilingTexture = backSector.properties.getValue('ceiling_texture') ?? '';
-            const isSky = skyTexture !== '' &&
-                frontCeilingTexture === skyTexture &&
-                backCeilingTexture === skyTexture;
+            for (const isFront of [false, true]) {
+                const lowerSideProperties = isFront
+                    ? frontProperties
+                    : backProperties;
 
-            const texture = isSky ?
-                this.#getSkyTexture(1) :
-                this.getTextureByName('texture', upperSideProperties.getValue('texture_upper'), 1);
+                const ownFloor0 = isFront ? frontFloor0 : backFloor0;
+                const ownFloor1 = isFront ? frontFloor1 : backFloor1;
 
-            let xScale = segmentWise ? upperSideProperties.getValue('x_scale_upper') : 1;
-            let yScale = segmentWise ? upperSideProperties.getValue('y_scale_upper') : 1;
-            if (xScale === 0) {
-                xScale = 0.001;
+                const otherFloor0 = isFront ? backFloor0 : frontFloor0;
+                const otherFloor1 = isFront ? backFloor1 : frontFloor1;
+
+                const sideTop0 = ownFloor0 > otherFloor0 ? lowerBottom0 : lowerTop0;
+                const sideTop1 = ownFloor1 > otherFloor1 ? lowerBottom1 : lowerTop1;
+
+                if (lowerBottom0 >= sideTop0 && lowerBottom1 >= sideTop1) {
+                    continue;
+                }
+
+                const frontFloorTexture =
+                    frontSector.properties.getValue('floor_texture');
+                const backFloorTexture =
+                    backSector.properties.getValue('floor_texture');
+
+                const isSky =
+                    skyTexture !== '' &&
+                    frontFloorTexture === skyTexture &&
+                    backFloorTexture === skyTexture;
+
+                const texture = isSky
+                    ? this.#getSkyTexture(1)
+                    : this.getTextureByName(
+                        'texture',
+                        lowerSideProperties.getValue('texture_lower'),
+                        1
+                    );
+
+                let xScale = segmentWise ? lowerSideProperties.getValue('x_scale_lower') : 1;
+                let yScale = segmentWise ? lowerSideProperties.getValue('y_scale_lower') : 1;
+
+                if (xScale === 0) {
+                    xScale = 0.001;
+                }
+
+                if (yScale === 0) {
+                    yScale = 0.001;
+                }
+
+                const height = texture.image.height / Math.abs(yScale);
+
+                const upperTop = Math.max(backCeilingHeight, frontCeilingHeight);
+                const lowerBottom = Math.min(backFloorHeight, frontFloorHeight);
+                const lowerTop = Math.max(backFloorHeight, frontFloorHeight);
+
+                const xOffset = (
+                    lowerSideProperties.getValue('x_offset') +
+                    segmentWise *
+                    lowerSideProperties.getValue('x_offset_lower')
+                ) / xScale;
+
+                const yOffset = -(
+                    lowerSideProperties.getValue('y_offset') +
+                    segmentWise *
+                    lowerSideProperties.getValue('y_offset_lower')
+                ) / yScale + (
+                    line.properties.getValue('lower_unpegged')
+                        ? height - (upperTop - lowerBottom)
+                        : height - (lowerTop - lowerBottom)
+                );
+
+                result.push(this.#createWallMesh(
+                    line,
+                    isFront,
+                    'lower',
+                    lowerBottom0,
+                    lowerBottom1,
+                    sideTop0,
+                    sideTop1,
+                    lowerBottom,
+                    xOffset,
+                    yOffset,
+                    xScale,
+                    yScale,
+                    texture,
+                    isSky
+                ));
             }
-            if (yScale === 0) {
-                yScale = 0.001;
-            }
-
-            const height = texture.image.height / Math.abs(yScale);
-
-            const xOffset = (upperSideProperties.getValue('x_offset') +
-                segmentWise * upperSideProperties.getValue('x_offset_upper')) / xScale;
-            const yOffset = -(upperSideProperties.getValue('y_offset') +
-                segmentWise * upperSideProperties.getValue('y_offset_upper')) / yScale +
-                (height - (upperTop - upperBottom)) * line.properties.getValue('upper_unpegged');
-
-            const mesh = this.#createWallMesh(
-                line,
-                isFront,
-                'upper',
-                upperBottom,
-                upperTop,
-                xOffset,
-                yOffset,
-                xScale,
-                yScale,
-                texture,
-                isSky
-            );
-
-            result.push(mesh);
         }
 
         return result;
@@ -1285,8 +1429,11 @@ export default class Map3D {
      * @param {Line} line - Line represented by the wall.
      * @param {boolean} isFront - Whether the wall belongs to the line's front side.
      * @param {string} section - Wall section: `upper`, `middle`, or `lower`.
-     * @param {number} bottom - Bottom height in map units.
-     * @param {number} top - Top height in map units.
+     * @param {number} bottom0 - Bottom height of first corner in map units.
+     * @param {number} bottom1 - Bottom height of second corner in map units.
+     * @param {number} top0 - Top height of first corner in map units.
+     * @param {number} top1 - Top height of second corner in map units.
+     * @param {number} referenceBottom - Reference bottom height in map units used for texture alignment.
      * @param {number} xOffset - Horizontal texture offset.
      * @param {number} yOffset - Vertical texture offset.
      * @param {number} xScale - Horizontal texture scale.
@@ -1295,17 +1442,23 @@ export default class Map3D {
      * @param {boolean} isSky - Whether the material renders as sky.
      * @returns {THREE.Mesh} Generated wall mesh.
      */
-    #createWallMesh(line, isFront, section, bottom, top, xOffset, yOffset, xScale, yScale, texture, isSky) {
+    #createWallMesh(line, isFront, section, bottom0, bottom1, top0, top1, referenceBottom, xOffset, yOffset,
+        xScale, yScale, texture, isSky) {
         const geometry = new THREE.BufferGeometry();
 
         const v0 = isFront ? line.v0 : line.v1;
         const v1 = isFront ? line.v1 : line.v0;
 
+        const b0 = isFront ? bottom0 : bottom1;
+        const b1 = isFront ? bottom1 : bottom0;
+        const t0 = isFront ? top0 : top1;
+        const t1 = isFront ? top1 : top0;
+
         const positions = new Float32Array([
-            v0.x, bottom * Map3D.VERTICAL_SCALE, -v0.y,
-            v1.x, bottom * Map3D.VERTICAL_SCALE, -v1.y,
-            v1.x, top * Map3D.VERTICAL_SCALE, -v1.y,
-            v0.x, top * Map3D.VERTICAL_SCALE, -v0.y,
+            v0.x, b0 * Map3D.VERTICAL_SCALE, -v0.y,
+            v1.x, b1 * Map3D.VERTICAL_SCALE, -v1.y,
+            v1.x, t1 * Map3D.VERTICAL_SCALE, -v1.y,
+            v0.x, t0 * Map3D.VERTICAL_SCALE, -v0.y,
         ]);
 
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -1314,20 +1467,24 @@ export default class Map3D {
         const textureWidth = texture.image.width;
         const textureHeight = texture.image.height;
 
-        const deltaX = line.v1.x - line.v0.x;
-        const deltaY = line.v1.y - line.v0.y;
-        const wallLength = Math.hypot(deltaX, deltaY);
+        const wallLength = Math.hypot(
+            line.v1.x - line.v0.x,
+            line.v1.y - line.v0.y
+        );
 
         const uStart = xOffset * xScale / textureWidth;
         const uEnd = (xOffset + wallLength) * xScale / textureWidth;
-        const vStart = yOffset * yScale / textureHeight;
-        const vEnd = (yOffset + (top - bottom)) * yScale / textureHeight;
+        const vOffset = yOffset - referenceBottom;
+        const vBottom0 = (b0 + vOffset) * yScale / textureHeight;
+        const vBottom1 = (b1 + vOffset) * yScale / textureHeight;
+        const vTop0 = (t0 + vOffset) * yScale / textureHeight;
+        const vTop1 = (t1 + vOffset) * yScale / textureHeight;
 
         const uvs = new Float32Array([
-            uStart, vStart,
-            uEnd, vStart,
-            uEnd, vEnd,
-            uStart, vEnd,
+            uStart, vBottom0,
+            uEnd, vBottom1,
+            uEnd, vTop1,
+            uStart, vTop0,
         ]);
         geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
 

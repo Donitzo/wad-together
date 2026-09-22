@@ -617,11 +617,28 @@ input {
         .editor__buttons .editor-button__select-mode {
             background-image: url(../images/ui/select_mode.png);
             top: 0;
+            z-index: 1;
         }
 
         .editor__buttons .editor-button__line-mode {
             background-image: url(../images/ui/line_mode.png);
             top: 42px;
+            z-index: 1;
+        }
+
+        .editor__buttons .editor-button__ceiling-slope-mode {
+            background-image: url(../images/ui/slope_mode.png);
+            left: 38px;
+            top: 0;
+            transform: scaleY(-1);
+            width: 41px;
+        }
+
+        .editor__buttons .editor-button__floor-slope-mode {
+            background-image: url(../images/ui/slope_mode.png);
+            left: 38px;
+            top: 42px;
+            width: 41px;
         }
 
         .editor__buttons .editor-button__rectangle-mode {

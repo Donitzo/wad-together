@@ -482,8 +482,10 @@ export default class Editor3D {
         if (updateHeight) {
             const sector = this.#map.getSector(x, y);
             if (sector !== null) {
-                this.#cameraRig.position.y = (sector.properties.getValue('floor_height') +
-                    Editor3D.#EYE_HEIGHT) * metersPerUnit * Map3D.VERTICAL_SCALE;
+                this.#cameraRig.position.y = (
+                    sector.getFloorHeight(this.#map.metadata.hasSlopes, x, y) +
+                    Editor3D.#EYE_HEIGHT
+                ) * metersPerUnit * Map3D.VERTICAL_SCALE;
             }
         }
     }
@@ -613,9 +615,13 @@ export default class Editor3D {
         const yawSide = yaw - Math.PI * 0.5;
 
         // Get the current sector and vertical boundaries
-        const sector = this.#map.getSector(worldPosition.x / metersPerUnit, -worldPosition.z / metersPerUnit);
-        const minSectorY = sector?.properties.getValue('floor_height') ?? -Infinity;
-        const maxSectorY = sector?.properties.getValue('ceiling_height') ?? Infinity;
+        const mapX = worldPosition.x / metersPerUnit;
+        const mapY = -worldPosition.z / metersPerUnit;
+
+        const sector = this.#map.getSector(mapX, mapY);
+
+        const minSectorY = sector?.getFloorHeight(this.#map.metadata.hasSlopes, mapX, mapY) ?? -Infinity;
+        const maxSectorY = sector?.getCeilingHeight(this.#map.metadata.hasSlopes, mapX, mapY) ?? Infinity;
 
         const desiredEyeHeight = eyeHeight * metersPerUnit * verticalScale;
         const trackedEyeHeight = inVr ? camera.position.y : 0;
@@ -671,9 +677,11 @@ export default class Editor3D {
 
                 if (sector !== null) {
                     this.#cameraRig.position.y =
-                        sector.properties.getValue('floor_height') *
-                        metersPerUnit *
-                        verticalScale;
+                        sector.getFloorHeight(
+                            this.#map.metadata.hasSlopes,
+                            handMapPosition.x,
+                            -handMapPosition.z
+                        ) * metersPerUnit * verticalScale;
 
                     this.#cameraTargetY = this.#cameraRig.position.y;
                 }
@@ -819,7 +827,7 @@ export default class Editor3D {
                 const floorHeight = hovered.sector.properties.getValue('floor_height');
                 const height = ceilingHeight - floorHeight;
 
-                this.#elementStatus.innerText = `F: ${floorHeight} C: ${ceilingHeight}  H: ${height}`;
+                this.#elementStatus.innerText = `F: ${floorHeight}${hovered.sector.hasFloorSlope() ? 'S' : ''} C: ${ceilingHeight}${hovered.sector.hasCeilingSlope() ? 'S' : ''}  H: ${height}`;
             } else {
                 this.#elementStatus.innerText = '';
             }
@@ -921,72 +929,87 @@ export default class Editor3D {
                 return;
             }
 
-            const heights = this.#getCachedSectorHeights(sector);
-            const line = sector.lines[0];
-            const newHeight = Math.max(isLower ? -32768 : heights.floor,
-                Math.min(isLower ? heights.ceiling : 32768,
-                    (isLower ? heights.floor
-                    : heights.ceiling) + delta
-                )
-            );
+            const operations = [];
 
-            if (isLower) {
-                heights.floor = newHeight;
-            } else {
-                heights.ceiling = newHeight;
-            }
+            const scrollSector = sector => {
+                const heights = this.#getCachedSectorHeights(sector);
 
-            // Create the required property operation to scroll the hovered sector
-            const operations = [{
-                op: 'setSectorPropertyBySide',
-                args: [
-                    line.v0.x, line.v0.y,
-                    line.v1.x, line.v1.y,
-                    line.frontSector === sector,
-                    isLower ? 'floor_height' : 'ceiling_height',
-                    newHeight,
-                ],
-            }];
+                const line = sector.lines[0];
 
+                const oldHeight = isLower ? heights.floor : heights.ceiling;
+
+                const newHeight = Math.max(
+                    isLower ? -32768 : heights.floor,
+                    Math.min(
+                        isLower ? heights.ceiling : 32767,
+                        oldHeight + delta
+                    )
+                );
+
+                const deltaHeight = newHeight - oldHeight;
+
+                if (deltaHeight === 0) {
+                    return;
+                }
+
+                if (isLower) {
+                    heights.floor = newHeight;
+                } else {
+                    heights.ceiling = newHeight;
+                }
+
+                const key = isLower ? 'floor' : 'ceiling';
+
+                operations.push({
+                    op: 'setSectorPropertyBySide',
+                    args: [
+                        line.v0.x, line.v0.y,
+                        line.v1.x, line.v1.y,
+                        line.frontSector === sector,
+                        `${key}_height`,
+                        newHeight,
+                    ],
+                });
+
+                const hasSlope = isLower
+                    ? heights.floorHasSlope
+                    : heights.ceilingHasSlope;
+
+                if (hasSlope) {
+                    const cKey = isLower ? 'floorPlaneC' : 'ceilingPlaneC';
+                    const dKey = isLower ? 'floorPlaneD' : 'ceilingPlaneD';
+
+                    heights[dKey] -= heights[cKey] * deltaHeight;
+
+                    operations.push({
+                        op: 'setSectorPropertyBySide',
+                        args: [
+                            line.v0.x, line.v0.y,
+                            line.v1.x, line.v1.y,
+                            line.frontSector === sector,
+                            `${key}_plane_d`,
+                            heights[dKey],
+                        ],
+                    });
+                }
+            };
+
+            scrollSector(sector);
 
             // Iterate and also scroll selected sectors if hovered was selected
             if (this.#map.isSelected(sector)) {
-                const property = isLower ? 'floor_height' : 'ceiling_height';
-
                 this.#map.iterateSectors(sector2 => {
                     if (sector2 !== sector && this.#map.isSelected(
                         sector2, null, null, isLower ? null : true, null, isLower ? true : null)) {
-                        const heights2 = this.#getCachedSectorHeights(sector2);
-                        const line2 = sector2.lines[0];
-                        const newHeight2 = Math.max(isLower ? -32768 : heights2.floor,
-                            Math.min(isLower ? heights2.ceiling : 32767,
-                                (isLower ? heights2.floor
-                                : heights2.ceiling) + delta
-                            )
-                        );
-
-                        if (isLower) {
-                            heights2.floor = newHeight2;
-                        } else {
-                            heights2.ceiling = newHeight2;
-                        }
-
-                        operations.push({
-                            op: 'setSectorPropertyBySide',
-                            args: [
-                                line2.v0.x, line2.v0.y,
-                                line2.v1.x, line2.v1.y,
-                                line2.frontSector === sector2,
-                                property,
-                                newHeight2,
-                            ],
-                        });
+                        scrollSector(sector2);
                     }
                 }, null, null, true);
             }
 
             // Send transaction to server
-            this.#client.sendTransaction(operations);
+            if (operations.length > 0) {
+                this.#client.sendTransaction(operations);
+            }
 
             if (this.#sectorHeightCacheTimeout !== null) {
                 clearTimeout(this.#sectorHeightCacheTimeout);
@@ -1018,7 +1041,7 @@ export default class Editor3D {
      * Get the cached or current heights for one sector.
      *
      * @param {Sector} sector
-     * @returns {{ceiling: number, floor: number}}
+     * @returns {object}
      */
     #getCachedSectorHeights(sector) {
         let heights = this.#cachedSectorHeights.get(sector);
@@ -1027,6 +1050,12 @@ export default class Editor3D {
             heights = {
                 floor: sector.properties.getValue('floor_height'),
                 ceiling: sector.properties.getValue('ceiling_height'),
+                floorHasSlope: sector.hasFloorSlope(),
+                floorPlaneC: sector.properties.getValue('floor_plane_c'),
+                floorPlaneD: sector.properties.getValue('floor_plane_d'),
+                ceilingHasSlope: sector.hasCeilingSlope(),
+                ceilingPlaneC: sector.properties.getValue('ceiling_plane_c'),
+                ceilingPlaneD: sector.properties.getValue('ceiling_plane_d'),
             };
 
             this.#cachedSectorHeights.set(sector, heights);

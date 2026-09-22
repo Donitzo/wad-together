@@ -471,7 +471,8 @@ export default class Interface {
                     break;
 
                 case 'f':
-                    if (e.ctrlKey) {
+                case 'F':
+                    if (e.ctrlKey && !e.shiftKey) {
                         // Flip the hovered line
                         const line = vectorEditor.hovered.line;
                         if (line !== null) {
@@ -486,7 +487,14 @@ export default class Interface {
                         }
 
                         e.preventDefault();
-                    } else if (!e.shiftKey) {
+                    } else if (e.shiftKey) {
+                        // Floor slope mode
+                        if (this.#doomMap.metadata.hasSlopes) {
+                            vectorEditor.setMode('floor-slope');
+
+                            e.preventDefault();
+                        }
+                    } else {
                         // Equalize height
                         const operations = [];
 
@@ -690,7 +698,15 @@ export default class Interface {
                     break;
 
                 case 'r':
-                    if (!e.ctrlKey && !e.shiftKey) {
+                case 'R':
+                    if (e.shiftKey && !e.ctrlKey) {
+                        // Ceiling slope mode
+                        if (this.#doomMap.metadata.hasSlopes) {
+                            vectorEditor.setMode('ceiling-slope');
+
+                            e.preventDefault();
+                        }
+                    } else if (!e.ctrlKey) {
                         // Rotate mode
                         vectorEditor.setMode('rotate');
 
@@ -1369,6 +1385,10 @@ export default class Interface {
             map3d.refreshTextures();
 
             client.requestMap();
+
+            document.querySelectorAll('.slope-button').forEach(element => {
+                element.style.visibility = this.#doomMap.metadata.hasSlopes ? 'visible' : 'hidden';
+            });
         };
 
         this.#doomMap.addEventListener('metadatachanged', e => {
@@ -1493,11 +1513,11 @@ export default class Interface {
             const doc = this.#resourceManager.loadMapAsDocument(selectedMapName);
 
             const result = this.#doomMap.import(doc, selectedMapName);
-            
+
             if (result.roundedCoordinates) {
                 alert('This map contains fractional coordinates. They have been rounded to the nearest integer.');
             }
-            
+
             updatePlayerStartPosition();
 
             this.#client.sendMap();
