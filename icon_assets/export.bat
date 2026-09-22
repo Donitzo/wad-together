@@ -17,6 +17,7 @@ del "%output_directory%\*" /F /Q
 "%inkscape%" ui.svg --export-area-drawing --export-type="png" --export-id-only --export-id="ellipse_mode" --export-filename="%output_directory%\ellipse_mode.png"
 "%inkscape%" ui.svg --export-area-drawing --export-type="png" --export-id-only --export-id="extrude_mode" --export-filename="%output_directory%\extrude_mode.png"
 "%inkscape%" ui.svg --export-area-drawing --export-type="png" --export-id-only --export-id="thing_mode" --export-filename="%output_directory%\thing_mode.png"
+"%inkscape%" ui.svg --export-area-drawing --export-type="png" --export-id-only --export-id="slope_mode" --export-filename="%output_directory%\slope_mode.png"
 
 "%inkscape%" ui.svg --export-area-drawing --export-type="png" --export-id-only --export-id="mini_window__enabled" --export-filename="%output_directory%\mini_window__enabled.png"
 "%inkscape%" ui.svg --export-area-drawing --export-type="png" --export-id-only --export-id="mini_window__disabled" --export-filename="%output_directory%\mini_window__disabled.png"

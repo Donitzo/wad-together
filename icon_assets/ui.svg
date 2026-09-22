@@ -126,6 +126,17 @@
             <path d="M704,192L704,156" style="fill:none;stroke:rgb(191,254,188);stroke-width:7.88px;stroke-linejoin:round;stroke-miterlimit:1.5;"/>
         </g>
     </g>
+    <g id="slope_mode" transform="matrix(1,0,0,1,128,128)">
+        <g transform="matrix(1,0,0,1,-132,-128)">
+            <path d="M884,372L785.917,273.917L785.917,372L884,372Z" style="fill:none;stroke:rgb(191,254,188);stroke-width:4.99px;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:1.5;stroke-dasharray:4.99,7.99,0,0,0,0;"/>
+        </g>
+        <g transform="matrix(1,0,0,0.489382,-132,61.95)">
+            <path d="M884,372L785.917,273.917L785.917,372L884,372Z" style="fill:none;stroke:rgb(191,254,188);stroke-width:9.53px;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:1.5;"/>
+        </g>
+        <g transform="matrix(1.27662,0,0,1.35641,-193.742,97.0031)">
+            <path d="M708.36,67.086L708.36,43.88L716.408,43.678L703.68,31.699L690.683,43.932L698.683,43.932L698.683,58.24L708.36,67.086Z" style="fill:rgb(191,254,188);stroke:rgb(191,254,188);stroke-width:0.76px;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:1.5;"/>
+        </g>
+    </g>
     <g id="extrude_mode">
         <g transform="matrix(1.08333,-2.1672e-32,-2.46519e-32,0.816327,218.667,-0.244898)">
             <path d="M400,113L400,15L496,15L496,113" style="fill:none;stroke:rgb(191,254,188);stroke-width:7.82px;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:1.5;stroke-dasharray:7.82,10.95,0,0,0,0;"/>
