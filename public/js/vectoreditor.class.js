@@ -4075,12 +4075,15 @@ export default class VectorEditor {
                     return;
                 }
 
+                const hasFloorSlope = side.sector.hasFloorSlope() || side.otherSector.hasFloorSlope();
+                const hasCeilingSlope = side.sector.hasCeilingSlope() || side.otherSector.hasCeilingSlope();
+
                 const floorHeight = side.sector.properties.getValue('floor_height');
                 const ceilingHeight = side.sector.properties.getValue('ceiling_height');
                 const otherFloorHeight = side.otherSector.properties.getValue('floor_height');
                 const otherCeilingHeight = side.otherSector.properties.getValue('ceiling_height');
 
-                if (isUpper && ceilingHeight > otherCeilingHeight) {
+                if (isUpper && (hasCeilingSlope || ceilingHeight > otherCeilingHeight)) {
                     operations.push({
                         op: 'setSideProperty',
                         args: [
@@ -4096,7 +4099,7 @@ export default class VectorEditor {
                     });
                 }
 
-                if (isLower && floorHeight < otherFloorHeight) {
+                if (isLower && (hasFloorSlope || floorHeight < otherFloorHeight)) {
                     operations.push({
                         op: 'setSideProperty',
                         args: [
