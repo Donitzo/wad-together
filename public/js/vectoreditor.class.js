@@ -1581,8 +1581,8 @@ export default class VectorEditor {
                         }
                     }
                 } else if (this.#subMode === 1) {
-                    this.#modeSlopeTarget.x = Math.round(snappedCursor.x);
-                    this.#modeSlopeTarget.y = Math.round(snappedCursor.y);
+                    this.#modeSlopeCenter.x = Math.round(snappedCursor.x);
+                    this.#modeSlopeCenter.y = Math.round(snappedCursor.y);
 
                     this.#modeSlopeLength = 0;
 
