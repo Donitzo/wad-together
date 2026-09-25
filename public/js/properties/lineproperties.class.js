@@ -443,9 +443,16 @@ export default class LineProperties extends BaseProperties {
                 gzdoom_udmf: null,
             },
             udmfKey: `arg${i}`,
-            label: `Arg ${i}`,
-            tooltip: `Action argument ${i}`,
+            label: (properties, port) =>
+                specials.getLineArg(port, properties.getValue('special'), i)?.label
+                    ?? `Arg ${i}`,
+            tooltip: (properties, port) =>
+                specials.getLineArg(port, properties.getValue('special'), i)?.tooltip
+                    ?? `Action argument ${i}`,
             type: 'integer',
+            datalist: (properties, port) =>
+                specials.getLineArg(port, properties.getValue('special'), i)?.datalist
+                    ?? [],
             range: {
                 doom_wad: [0, 255],
                 doom_udmf: [-2147483648, 2147483647],
@@ -459,6 +466,11 @@ export default class LineProperties extends BaseProperties {
                 gzdoom_hexen_wad: [0, 255],
                 gzdoom_udmf: [-2147483648, 2147483647],
             },
+            displayRange: (properties, port) =>
+                specials.getLineArg(port, properties.getValue('special'), i)?.displayRange
+                    ?? (['hexen_wad', 'hexen_udmf', 'zdoom_hexen_wad', 'gzdoom_hexen_wad'].includes(port)
+                        ? [0, 255]
+                        : [-2147483648, 2147483647]),
             ports: {
                 doom_wad: false,
                 doom_udmf: true,

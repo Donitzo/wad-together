@@ -1303,6 +1303,10 @@ const SPECIALS_BY_PORT = {
             mapping.byteSpecial ? `${type}Byte` : type
         ];
     },
+
+    getLineArg(port, special, arg) {
+        return null;
+    },
 };
 
 for (const family of ['doomWad', 'doomUdmf', 'boom', 'hexen', 'zdoomDoom', 'zdoom', 'gzdoomDoom', 'gzdoom']) {
