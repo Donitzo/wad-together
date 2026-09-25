@@ -468,7 +468,10 @@ export default class LineProperties extends BaseProperties {
             },
             displayRange: (properties, port) =>
                 specials.getLineArg(port, properties.getValue('special'), i)?.displayRange
-                    ?? (['hexen_wad', 'hexen_udmf', 'zdoom_hexen_wad', 'gzdoom_hexen_wad'].includes(port)
+                    ?? (port === 'hexen_wad' ||
+                        port === 'hexen_udmf' ||
+                        port === 'zdoom_hexen_wad' ||
+                        port === 'gzdoom_hexen_wad'
                         ? [0, 255]
                         : [-2147483648, 2147483647]),
             ports: {
