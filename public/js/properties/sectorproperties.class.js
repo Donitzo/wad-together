@@ -10,18 +10,6 @@ export default class SectorProperties extends BaseProperties {
             type: 'boolean',
             default: false,
         }, {
-            key: 'floor_slope_set',
-            tooltip: 'Whether floor slope heights have been assigned to the sector lines.',
-            type: 'boolean',
-            default: false,
-            hidden: true,
-        }, {
-            key: 'ceiling_slope_set',
-            tooltip: 'Whether ceiling slope heights have been assigned to the sector lines.',
-            type: 'boolean',
-            default: false,
-            hidden: true,
-        }, {
             key: 'floor_height',
             wadKey: 'heightfloor',
             udmfKey: 'heightfloor',
