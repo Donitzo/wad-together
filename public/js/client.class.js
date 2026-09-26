@@ -461,8 +461,6 @@ export default class Client extends EventTarget {
 
         if (!this.#offlineMode) {
             this.#socket.emit('transaction', { operations, transactionId, senderIndex: this.#ownUser.index });
-
-            return transactionId;
         }
 
         return this.#ownUser.isAdmin ? null : transactionId;
