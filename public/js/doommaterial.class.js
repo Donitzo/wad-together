@@ -5,10 +5,14 @@ varying vec4 vClipPosition;
 varying vec2 vUv;
 varying float vYaw;
 varying float vViewDistance;
+varying vec2 vWorldPosition;
 
 void main() {
-    vec4 view = modelViewMatrix * vec4(position, 1.0);
+    vec4 world = modelMatrix * vec4(position, 1.0);
+    vec4 view = viewMatrix * world;
     vec4 clip = projectionMatrix * view;
+
+    vWorldPosition = world.xz;
 
     vClipPosition = clip;
     vUv = uv;
@@ -38,10 +42,14 @@ uniform vec3 uLightColor;
 uniform vec3 uFadeColor;
 uniform float uFogDensity;
 
+uniform vec2 uHighlightStartPosition;
+uniform vec2 uHighlightEndPosition;
+
 varying vec4 vClipPosition;
 varying vec2 vUv;
 varying float vYaw;
 varying float vViewDistance;
+varying vec2 vWorldPosition;
 
 void main() {
     // Get sky or regular UV coordinate
@@ -99,13 +107,39 @@ void main() {
     );
     color = mix(uFadeColor, color, fogFactor);
 
+    // Horizontal highlight
+    vec2 ab = uHighlightEndPosition - uHighlightStartPosition;
+
+    float lengthSquared = dot(ab, ab);
+
+    float distanceToHighlight;
+
+    if (lengthSquared > 0.0) {
+        float t = clamp(dot(vWorldPosition - uHighlightStartPosition, ab) / lengthSquared, 0.0, 1.0);
+        distanceToHighlight = length(vWorldPosition - (uHighlightStartPosition + ab * t));
+    } else {
+        distanceToHighlight = length(vWorldPosition - uHighlightStartPosition);
+    }
+
+    float highlight = 1.0 - smoothstep(0.07, 0.08, distanceToHighlight);
+
     // Mix the final color
     gl_FragColor = vec4(
         mix(
-            color,
-            mix(vec3(0.3, 0.5, 1.0), vec3(1.0, 0.3, 1.0), uSelected),
-            min(uHovered + uSelected, 0.4)
-        ), 1.0);
+            mix(
+                color,
+                mix(
+                    vec3(0.3, 0.5, 1.0),
+                    vec3(1.0, 0.3, 1.0),
+                    uSelected
+                ),
+                min(uHovered + uSelected, 0.4)
+            ),
+            vec3(1.0),
+            highlight
+        ),
+        1.0
+    );
 }`;
 
 
@@ -140,6 +174,8 @@ export default class DoomMaterial extends THREE.ShaderMaterial {
                 uLightColor: { value: new THREE.Color(0xffffff) },
                 uFadeColor: { value: new THREE.Color(0x000000) },
                 uFogDensity: { value: 0.0 },
+                uHighlightStartPosition: { value: new THREE.Vector2(0, -1000000) },
+                uHighlightEndPosition: { value: new THREE.Vector2(0, -1000000) },
             },
             vertexShader,
             fragmentShader,
