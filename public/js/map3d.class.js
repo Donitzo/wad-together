@@ -115,6 +115,8 @@ export default class Map3D {
      */
     addSector(sector) {
         if (!this.#sectors.has(sector)) {
+            this.#removeSectorMeshes(sector);
+    
             this.#sectors.add(sector);
             this.#markDirty(sector);
             this.#addToSpatialIndexSector(sector);
@@ -854,31 +856,34 @@ export default class Map3D {
      */
     #removeSectorMeshes(sector) {
         const meshes = this.#sectorMeshes.get(sector);
-        if (meshes === undefined) {
-            return;
+
+        if (meshes !== undefined) {
+            if (this.#visibleSectors.has(sector)) {
+                this.#detachSectorMeshes(sector);
+                this.#visibleSectors.delete(sector);
+            }
+
+            meshes.forEach(mesh => {
+                this.#selectedMeshes.delete(mesh);
+                this.#hoveredMeshes.delete(mesh);
+                this.#disposeMesh(mesh);
+            });
+
+            this.#sectorMeshes.delete(sector);
         }
 
-        if (this.#visibleSectors.has(sector)) {
-            this.#detachSectorMeshes(sector);
-            this.#visibleSectors.delete(sector);
-        }
         this.#detachSectorWallMeshes(sector, true);
-
-        meshes.forEach(mesh => {
-            this.#selectedMeshes.delete(mesh);
-            this.#hoveredMeshes.delete(mesh);
-            this.#disposeMesh(mesh);
-        });
-        this.#sectorMeshes.delete(sector);
 
         sector.allLines.forEach(line => {
             const walls = this.#wallMeshes.get(line);
+
             if (walls !== undefined) {
                 walls.forEach(mesh => {
                     this.#selectedMeshes.delete(mesh);
                     this.#hoveredMeshes.delete(mesh);
                     this.#disposeMesh(mesh);
                 });
+
                 this.#wallMeshes.delete(line);
             }
         });
