@@ -168,6 +168,38 @@ export default class Sector extends Geometry {
         // Select the most common sector properties from sector lines
         this.#selectMostCommonSectorProperties();
 
+        // Calculate slope height for the first point for each line in the sector
+        const hasFloorSlope = this.hasFloorSlope();
+        const hasCeilingSlope = this.hasCeilingSlope();
+        
+        if (hasFloorSlope || hasCeilingSlope) {
+            lines.forEach(side => {
+                const line = lineMap.get(
+                    DoomMap.createLineKey(
+                        side.v0.x, side.v0.y,
+                        side.v1.x, side.v1.y
+                    )
+                );
+
+                // Traversal begins at v0 on front, v1 on back.
+                const vertex = side.front ? line.v0 : line.v1;
+
+                if (hasFloorSlope) {
+                    line.properties.setValue(
+                        side.front ? 'height_front_floor' : 'height_back_floor',
+                        Math.round(this.getFloorHeight(true, vertex.x, vertex.y))
+                    );
+                }
+
+                if (hasCeilingSlope) {
+                    line.properties.setValue(
+                        side.front ? 'height_front_ceiling' : 'height_back_ceiling',
+                        Math.round(this.getCeilingHeight(true, vertex.x, vertex.y))
+                    );
+                }
+            });
+        }
+
         // Pre-calculate edge coefficients for containsPoint
         for (let i = 0, j = flatXY.length - 2; i < flatXY.length; j = i, i += 2) {
             const x0 = flatXY[j];
