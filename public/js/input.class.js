@@ -47,6 +47,16 @@ export default class Input {
             Input.#cursorPosition.y = y;
         };
 
+        window.addEventListener('blur', () => {
+            Input.#keyDown.clear();
+            Input.#keyUp.clear();
+            Input.#key.clear();
+        
+            Input.#mouseButtonDown.clear();
+            Input.#mouseButtonUp.clear();
+            Input.#mouseButton.clear();
+        });
+
         document.addEventListener('keydown', e => {
             if (e.repeat) {
                 return;
@@ -57,10 +67,6 @@ export default class Input {
         });
 
         document.addEventListener('keyup', e => {
-            if (e.repeat) {
-                return;
-            }
-
             if (Input.#key.has(e.code)) {
                 Input.#keyUp.add(e.code);
                 Input.#key.delete(e.code);
